@@ -12,8 +12,8 @@
    * For this script, it is assumed that the `RNA-STAR` conda environment has already been installed. If it has not been installed, follow the instructions in the [star_alignment](https://github.com/ling-sn/star_alignment/blob/3fd922a164b3fb833617b1fcb8dc82e8576d75aa/README.md) README
 3. Edit `calculate_dr.sbatch` to match your experiments
    * Change the following:
+     * `#SBATCH --mail-user=YOUR_UNIQNAME@umich.edu
      * `#SBATCH --array=0-11%2`
-     * `#SBATCH --mail-user=YOUR_UNIQNAME@umich.edu`
      * `#SBATCH --time=4:00:00`
      * Strings under `declare -a tasks=(`
 5. Run `calculate_dr.sbatch` to calculate deletion rates at each UNUAR site
