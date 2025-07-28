@@ -5,6 +5,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import pysam
+import concurrent.futures
 
 def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     """
@@ -30,7 +31,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
         traceback.print_exc()
         raise
 
-def count_base(genome_coord, input_bam_name, results):
+def count_base(chunk, input_bam_name, results):
     bamfile = pysam.AlignmentFile(input_bam_name, "rb")
     """
     Counts number of bases/deletions for each UNUAR site
@@ -38,23 +39,31 @@ def count_base(genome_coord, input_bam_name, results):
         2) mod_base: value in "GenomicModBase" column (e.g., 373)
     """
     try:
-        all_chunks = np.array_split(genome_coord, 100)
+        for row in chunk:
+            chrom = row[0]
+            mod_base = row[1]
+            base_ct = {"A": 0, "C": 0, "G": 0, "T": 0, "Deletions": 0}
 
-        for chunk in all_chunks:
-            for row in chunk:
-                chrom = row[0]
-                mod_base = row[1]
-                base_ct = {"A": 0, "C": 0, "G": 0, "T": 0, "Deletions": 0}
+            pysam_pileup(bamfile, chrom, mod_base, base_ct)
 
-                pysam_pileup(bamfile, chrom, mod_base, base_ct)
-
-                results.append({"Chrom": chrom,
-                                "GenomicModBase": mod_base,
-                                **base_ct}) ## unpack base_ct dict in this dict
-                
+            results.append({"Chrom": chrom,
+                            "GenomicModBase": mod_base,
+                            **base_ct}) ## unpack base_ct dict in this dict
         bamfile.close()
     except Exception as e:
         print(f"Failed to count bases/deletions in UNUAR sites: {e}")
+        traceback.print_exc()
+        raise
+
+def process_chunk(genome_coord, input_bam_name, results):
+    try:
+        all_chunks = np.array_split(genome_coord, 100)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(count_base, chunk, input_bam_name, results) for chunk in all_chunks]
+            for future in concurrent.futures.as_completed(futures):
+                results.extend(future.result())
+    except Exception as e:
+        print(f"Failed to parallelize chunks: {e}")
         traceback.print_exc()
         raise
 
@@ -85,7 +94,7 @@ def open_bam(folder_name):
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
-                    count_base(genome_coord, input_bam_name, results)
+                    process_chunk(genome_coord, input_bam_name, results)
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
