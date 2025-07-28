@@ -6,13 +6,6 @@ import pandas as pd
 import numpy as np
 import pysam
 
-left = pd.read_csv("UNUAR_motif_sites_mRNA.tsv", sep = "\t")
-left["Motif"] = left["Motif"].str.replace("U", "T") ## each BAM file has sequences w/ Thymine (T) instead of Uracil (U)
-right = pd.read_excel("SupplementaryTable1.xlsx")
-
-df = pd.merge(left, right, how = "left", on = "Motif")
-genome_coord = df[["Chrom", "GenomicModBase"]].to_numpy() ## faster processing
-
 def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     """
     Counts number of bases/deletions in PileupColumn 
@@ -34,7 +27,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
         traceback.print_exc()
         raise
 
-def count_base(input_bam_name, results):
+def count_base(genome_coord, input_bam_name, results):
     bamfile = pysam.AlignmentFile(input_bam_name, "rb")
     """
     Counts number of bases/deletions for each UNUAR site
@@ -70,6 +63,13 @@ def open_bam(folder_name):
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
+
+    left = pd.read_csv(f"{current_path}/UNUAR_motif_sites_mRNA.tsv", sep = "\t")
+    left["Motif"] = left["Motif"].str.replace("U", "T") ## each BAM file has sequences w/ Thymine (T) instead of Uracil (U)
+    right = pd.read_excel(f"{current_path}/SupplementaryTable1.xlsx")
+
+    df = pd.merge(left, right, how = "left", on = "Motif")
+    genome_coord = df[["Chrom", "GenomicModBase"]].to_numpy() ## faster processing
     
     try: 
         for subfolder in input_dir.iterdir():
@@ -82,7 +82,7 @@ def open_bam(folder_name):
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
-                    count_base(input_bam_name, results)
+                    count_base(genome_coord, input_bam_name, results)
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
