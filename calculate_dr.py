@@ -58,7 +58,7 @@ def count_base(chunk, input_bam_name, results):
 def process_chunk(genome_coord, input_bam_name, results):
     try:
         all_chunks = np.array_split(genome_coord, 100)
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
             futures = [executor.submit(count_base, chunk, input_bam_name, results) for chunk in all_chunks]
             for future in concurrent.futures.as_completed(futures):
                 results.extend(future.result())
