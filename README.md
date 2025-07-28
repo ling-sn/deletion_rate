@@ -13,7 +13,8 @@
 4. Run `calculate_dr.sbatch` to calculate deletion rates at each UNUAR site
    * Output .tsv files are saved in the same directories as the realigned .bam files
 ### Tools used in contaminant removal script
-* Text
+* **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at a given genomic coordinate
+  * In other words, assuming that each read in a .bam file is horizontally stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by the genomic coordinate. In each of these slices, there is a list of reads (`PileupRead` objects).
 ### When do I use this pipeline?
 This is used after running the STAR realignment script (`realignGap.py`). Start from the working directory that contains the `realignments` folder.
 ### Understanding the calculate_dr SBATCH
@@ -22,7 +23,7 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 ```
 * **--folder_name:** Name of processed_fastqs folder that you wish to calculate deletion rates for. DO NOT INPUT A PATH.
 ### Additional information
-* `SupplementaryTable1.xlsx`:
+* `SupplementaryTable1.xlsx` 
 * `UNUAR_motif_sites_mRNA.tsv`:
 ### Citations
 * Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
