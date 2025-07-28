@@ -6,15 +6,21 @@
 * `calculate_dr.py` and `calculate_dr.sbatch`
 * `SupplementaryTable1.xlsx`
 * `UNUAR_motif_sites_mRNA.tsv`
+  * Due to its size, this file was not uploaded to the repository. To access it, copy it from the permanent directory: **<perma_dir>**
 ### Instructions
 1. Activate conda environment via `conda activate RNA-STAR`
    * For this script, it is assumed that the `RNA-STAR` conda environment has already been installed. If it has not been installed, follow the instructions in the [star_alignment](https://github.com/ling-sn/star_alignment/blob/3fd922a164b3fb833617b1fcb8dc82e8576d75aa/README.md) README
 3. Edit `calculate_dr.sbatch` to match your experiments
-4. Run `calculate_dr.sbatch` to calculate deletion rates at each UNUAR site
+   * Change the following:
+     * `#SBATCH --array=0-11%2`
+     * `#SBATCH --mail-user=YOUR_UNIQNAME@umich.edu`
+     * `#SBATCH --time=4:00:00`
+     * Strings under `declare -a tasks=(`
+5. Run `calculate_dr.sbatch` to calculate deletion rates at each UNUAR site
    * Output .tsv files are saved in the same directories as the realigned .bam files
 ### Tools used in contaminant removal script
-* **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at a given genomic coordinate
-  * In other words, assuming that each read in a .bam file is horizontally stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by the genomic coordinate. In each of these slices, there is a list of reads (`PileupRead` objects).
+* **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at given genomic coordinates
+  * In other words, assuming that each read in a .bam file is horizontally stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by each genomic coordinate. In each of these slices, there is a list of reads (`PileupRead` objects).
 ### When do I use this pipeline?
 This is used after running the STAR realignment script (`realignGap.py`). Start from the working directory that contains the `realignments` folder.
 ### Understanding the calculate_dr SBATCH
@@ -22,8 +28,9 @@ This is used after running the STAR realignment script (`realignGap.py`). Start 
 python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 ```
 * **--folder_name:** Name of processed_fastqs folder that you wish to calculate deletion rates for. DO NOT INPUT A PATH.
-### Additional information
-* `SupplementaryTable1.xlsx` 
-* `UNUAR_motif_sites_mRNA.tsv`:
+### Merged datatables
+The following two datatables were merged with a left-join:
+* `UNUAR_motif_sites_mRNA.tsv` contains the GenBank accession number (`Chrom`) and genomic coordinate of the modified base (`GenomicModBase`) for all UNUAR sites in the human genome.
+* `SupplementaryTable1.xlsx` contains the best-fit parameters for 256 UNUAR motif contexts (_Zhang et al., 17_).
 ### Citations
 * Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
