@@ -21,7 +21,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
                     base_ct["Deletions"] += 1
                 elif not pileupread.is_refskip:
                     base = pileupread.alignment.query_sequence[pileupread.query_position] ## taken from example in manual; returns base letter
-                    base_ct[str(base)] += 1
+                    base_ct[base] += 1
     except Exception as e:
         print(f"Failed to count bases/deletions in PileupColumn for Chromosome {chrom} at GenomicModBase {mod_base}: {e}")
         traceback.print_exc()
