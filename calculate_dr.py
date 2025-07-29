@@ -98,12 +98,11 @@ def open_bam(folder_name):
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
-                    sums = counts[["A", "C", "G", "T", "Deletions"]].sum(axis = 1) ## sum across rows
-                    counts_filtered = counts[sums != 0].copy() ## only keep rows where sum does not equal 0 (prevents division by 0)
-                    counts_filtered["DeletionRate"] = counts_filtered["Deletions"]/counts_filtered[["A", "C", "G", "T", "Deletions"]].sum(axis = 1)
-                                       
+                    total_sum = counts[["A", "C", "G", "T", "Deletions"]].sum(axis = 1) ## sum across rows
+                    counts["DeletionRate"] = counts["Deletions"]/total_sum
+                    
                     ## calculate real deletion rates
-                    df_final = pd.merge(df, counts_filtered, how = "left", on = ["Chrom", "GenomicModBase"])
+                    df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna()
                     num = df_final["DeletionRate"] - df_final["fit_B"]
                     denom = ((df_final["fit_R"] - df_final["fit_B"]) + 
                              df_final["fit_A"]*(df_final["DeletionRate"] - df_final["fit_R"] - df_final["fit_B"]))
