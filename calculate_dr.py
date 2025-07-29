@@ -61,7 +61,7 @@ def process_chunk(genome_coord, input_bam_name, results):
         with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
             futures = [executor.submit(count_base, chunk, input_bam_name, results) for chunk in all_chunks]
             for future in concurrent.futures.as_completed(futures):
-                results.extend(future.result())
+                future.result()
     except Exception as e:
         print(f"Failed to parallelize chunks: {e}")
         traceback.print_exc()
