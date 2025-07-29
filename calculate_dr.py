@@ -99,7 +99,7 @@ def open_bam(folder_name):
                     counts = pd.DataFrame(results)
                     sums = counts[["A", "C", "G", "T", "Deletions"]].sum(axis = 1) ## sum across rows
                     counts_filtered = counts[sums != 0] ## only keep rows where sum does not equal 0 (prevents division by 0)
-                    counts_filtered["DeletionRate"] = counts_filtered["Deletions"]/counts_filtered[["A", "C", "G", "T", "Deletions"]].sum(axis = 1)
+                    counts_filtered.loc[:, "DeletionRate"] = counts_filtered["Deletions"]/counts_filtered[["A", "C", "G", "T", "Deletions"]].sum(axis = 1)
                     
                     ## calculate real deletion rates
                     df_final = pd.merge(df, counts_filtered, how = "left", on = ["Chrom", "GenomicModBase"])
