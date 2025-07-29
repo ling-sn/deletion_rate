@@ -15,17 +15,16 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     try:
         for pileupcolumn in bamfile.pileup(str(chrom), int(mod_base-1), int(mod_base), truncate = True): ## pysam is 0-based, while GenomicModBase was 1-based
             pileupcolumn.set_min_base_quality(0) ## prevent pysam from filtering based on base quality
-            if pileupcolumn.pos != int(mod_base-1): ## if not at exact pos, skip to next iteration
-                continue
-            for pileupread in pileupcolumn.pileups:
-                if pileupread.is_del and not pileupread.is_refskip:
-                    base_ct["Deletions"] += 1
-                elif not pileupread.is_refskip:
-                    base = pileupread.alignment.query_sequence[pileupread.query_position] ## taken from example in manual; returns base letter
-                    if base in base_ct:
-                        base_ct[base] += 1
-                    else:
-                        continue
+            if pileupcolumn.pos == int(mod_base-1):
+                for pileupread in pileupcolumn.pileups:
+                    if pileupread.is_del and not pileupread.is_refskip:
+                        base_ct["Deletions"] += 1
+                    elif not pileupread.is_refskip:
+                        base = pileupread.alignment.query_sequence[pileupread.query_position] ## taken from example in manual; returns base letter
+                        if base in base_ct:
+                            base_ct[base] += 1
+                        else:
+                            continue
     except Exception as e:
         print(f"Failed to count bases/deletions in PileupColumn for Chromosome {chrom} at GenomicModBase {mod_base}: {e}")
         traceback.print_exc()
