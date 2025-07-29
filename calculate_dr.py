@@ -85,7 +85,7 @@ def open_bam(folder_name):
     try: 
         for subfolder in input_dir.iterdir():
             if subfolder.is_dir():
-                processed_folder = input_dir/f"{subfolder.name}_realigned"
+                processed_folder = input_dir/f"{subfolder.name}"
                 
                 for bam in subfolder.glob("*.bam"):
                     results = []
