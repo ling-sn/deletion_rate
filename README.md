@@ -38,7 +38,7 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 
 * Meanwhile, the fraction of molecules actually modified at each UNUAR site (also referred to as "real deletion rate" and "Ψ modification stoichiometry") was calculated with the following formula:
 
-  $$x = \frac{y-B}{(R-B) + A(y-R-B)}$$
+  $$x = \frac{y-B}{(R-B) + A(y-R)}$$
 
   in which:
 
