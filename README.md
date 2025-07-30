@@ -22,13 +22,13 @@
 * **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at given genomic coordinates
   * In other words, assuming that each read in a .bam file is horizontally stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by each genomic coordinate. In each of these slices, there is a list of reads (`PileupRead` objects).
 ### When do I use this pipeline?
-This is used after running the STAR realignment script (`realignGap.py`). Start from the working directory that contains the `realignments` folder.
+This is used after running the STAR realignment script (`realignGap.py`). You can either start from the working directory that contains the `realignments` folder OR copy the `realignments` folder to a new directory.
 ### Understanding the calculate_dr SBATCH
 ```
 python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 ```
 * **--folder_name:** Name of processed_fastqs folder that you wish to calculate deletion rates for. DO NOT INPUT A PATH.
-### Datasets & Calculations
+### Datasets & calculations
 * The following two datasets were merged with a left-join:
   * `UNUAR_motif_sites_mRNA.tsv` contains the GenBank accession number (`Chrom`) and genomic coordinate of the modified base (`GenomicModBase`) for all UNUAR sites in the human genome.
   * `SupplementaryTable1.xlsx` contains the best-fit parameters for 256 UNUAR motif contexts (_Zhang et al., 533_).
