@@ -107,8 +107,7 @@ def open_bam(folder_name):
                     denom = ((df_final["fit_R"] - df_final["fit_B"]) + 
                               df_final["fit_A"]*(df_final["DeletionRate"] - df_final["fit_R"]))
                     df_final["RealRate"] = num/denom
-                    df_final = df_final[df_final["RealRate"] >= 0] ## drop all rows w/ negative realrate
-                    df_final.sort_values(by = "RealRate", ascending = False) ## sort df by greatest -> least realrate
+                    df_final = df_final[df_final["RealRate"] >= 0].sort_values(by = "RealRate", ascending = False) ## drop all rows w/ negative realrate; sort realrate in descending order
 
                     ## add all calculations to og dataframe & save as .tsv output
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
