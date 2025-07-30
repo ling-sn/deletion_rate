@@ -102,7 +102,7 @@ def open_bam(folder_name):
                     
                     ## calculate real deletion rates
                     df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna() ## drop all rows w/ null values
-                    df_final.sort_values(by = "DeletionRate", ascending = False) ## sort df from greatest -> least deletion rate
+                    df_final.sort_values(by = "DeletionRate", ascending = False) ## sort df by greatest -> least deletion rate
 
                     num = df_final["fit_b"] - df_final["DeletionRate"]
                     denom = (df_final["fit_c"]*(df_final["fit_b"] + df_final["fit_s"] -
