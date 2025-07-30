@@ -94,7 +94,7 @@ def open_bam(folder_name):
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
                     process_chunk(genome_coord, input_bam_name, results)
-                    results = [dict for dict in results if dict["Deletions"] and not pd.isna(dict["Deletions"])] ## drop dictionaries where "Deletions" = 0 or is null
+                    results = [dict for dict in results if dict["Deletions"]] ## drop dictionaries where "Deletions" = 0
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
@@ -102,7 +102,7 @@ def open_bam(folder_name):
                     counts["DeletionRate"] = counts["Deletions"]/total_sum
                     
                     ## calculate real deletion rates
-                    df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna()
+                    df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna() ## drop all rows w/ null values
                     num = df_final["DeletionRate"] - df_final["fit_B"]
                     denom = ((df_final["fit_R"] - df_final["fit_B"]) + 
                              df_final["fit_A"]*(df_final["DeletionRate"] - df_final["fit_R"] - df_final["fit_B"]))
