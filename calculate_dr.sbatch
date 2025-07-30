@@ -3,10 +3,10 @@
 #SBATCH --mail-user=lingsn@umich.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --output=calculate_dr_%u_%A_%a.out
-#SBATCH --array=0-11%2
+#SBATCH --array=0-11%4
 #SBATCH --account=cweidman0
-#SBATCH --time=60:00:00
-#SBATCH --mem=32000m
+#SBATCH --time=34:00:00
+#SBATCH --mem=40000m
 #SBATCH --cpus-per-task=12
 #SBATCH --partition=standard
 #SBATCH --ntasks-per-node=2
