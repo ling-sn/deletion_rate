@@ -5,7 +5,7 @@
 #SBATCH --output=calculate_dr_%u_%A_%a.out
 #SBATCH --array=0-11%2
 #SBATCH --account=cweidman0
-#SBATCH --time=24:00:00
+#SBATCH --time=60:00:00
 #SBATCH --mem=32000m
 #SBATCH --cpus-per-task=12
 #SBATCH --partition=standard
