@@ -105,7 +105,7 @@ def open_bam(folder_name):
                     df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna() ## drop all rows w/ null values
                     num = df_final["DeletionRate"] - df_final["fit_B"]
                     denom = ((df_final["fit_R"] - df_final["fit_B"]) + 
-                             df_final["fit_A"]*(df_final["DeletionRate"] - df_final["fit_R"] - df_final["fit_B"]))
+                              df_final["fit_A"]*(df_final["DeletionRate"] - df_final["fit_R"]))
                     df_final["RealRate"] = num/denom
 
                     ## add all calculations to og dataframe & save as .tsv output
