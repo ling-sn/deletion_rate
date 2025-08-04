@@ -5,8 +5,8 @@
 * `realignments` folder (see "_When do I use this pipeline?_" for more information)
 * `calculate_dr.py` and `calculate_dr.sbatch`
 * `SupplementaryTable1.xlsx`
-* `UNUAR_motif_sites_mRNA.tsv`
-  * Due to its size, this file was not uploaded to the repository. To access it, copy it from the permanent directory: **<perma_dir>**
+* `UNUAR_motif_sites_mRNA_hg38p14.tsv`
+  * Due to its size, this file was not uploaded to the repository. To access it, copy it from the permanent directory: `~/umms-RNAlabDATA/umms-RNAlabDATA/Software/genome_indices`
 ### Instructions
 1. Activate conda environment via `conda activate RNA-STAR`
    * For this script, it is assumed that the `RNA-STAR` conda environment has already been installed. If it has not been installed, follow the instructions in the [star_alignment](https://github.com/ling-sn/star_alignment/blob/3fd922a164b3fb833617b1fcb8dc82e8576d75aa/README.md) README
