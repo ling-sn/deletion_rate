@@ -74,9 +74,9 @@ def open_bam(folder_name):
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
-
-    left = pd.read_csv(f"{current_path}/UNUAR_motif_sites_mRNA.tsv", sep = "\t")
-    right = pd.read_excel(f"{current_path}/SupplementaryTable1_alt.xlsx")
+    
+    left = pd.read_csv(Path("~/umms-RNAlabDATA/Software/genome_indices/UNUAR_motif_sites_mRNA_hg38p14.tsv").expanduser(), sep = "\t")
+    right = pd.read_excel(f"{current_path}/SupplementaryTable1.xlsx")
 
     df = pd.merge(left, right, how = "left", on = "Motif")
     genome_coord = df[["Chrom", "GenomicModBase"]].to_numpy() ## faster processing
@@ -93,7 +93,6 @@ def open_bam(folder_name):
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
                     process_chunk(genome_coord, input_bam_name, results)
-                    results = [dict for dict in results if dict["Deletions"]] ## drop dictionaries where "Deletions" = 0
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
@@ -101,12 +100,11 @@ def open_bam(folder_name):
                     counts["DeletionRate"] = counts["Deletions"]/total_sum
                     
                     ## calculate real deletion rates
-                    df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna() ## drop all rows w/ null values
+                    df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"])
                     num = df_final["fit_b"] - df_final["DeletionRate"]
                     denom = (df_final["fit_c"]*(df_final["fit_b"] + df_final["fit_s"] -
                              df_final["fit_s"]*df_final["DeletionRate"]-1))
                     df_final["RealRate"] = num/denom
-                    df_final = df_final[df_final["RealRate"] >= 0].sort_values(by = "RealRate", ascending = False) ## drop all rows w/ negative realrate; sort realrate in descending order
 
                     ## add all calculations to og dataframe & save as .tsv output
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
