@@ -75,19 +75,19 @@ def make_key(subfolder, base_key):
     """
     ## Adds replicate prefix to dictionary key names
     for rep in ["Rep1", "Rep2", "Rep3"]:
-        if f"-{rep}-" in subfolder:
+        if f"-{rep}-" in str(subfolder):
             prefix = rep + "_"
             break
     
     ## Adds sample type suffix to dictionary key names
     for sample in ["BS", "NBS"]:
-        if f"-{sample}_" in subfolder:
+        if f"-{sample}_" in str(subfolder):
             suffix = "_" + sample
             break
     
     return prefix + base_key + suffix
 
-def grouped(folder_name):
+def match_regex(folder_name):
     """
     Given input folder names, extract the group name.
         EXAMPLE: '7KO-Cyto-BS_processed_fastqs' -> '7KO-Cyto'
@@ -108,7 +108,7 @@ def open_bam(folder_name):
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
-    group_name = grouped(folder_name)
+    group_name = match_regex(folder_name)
     
     left = pd.read_csv(Path("~/umms-RNAlabDATA/Software/genome_indices/UNUAR_motif_sites_mRNA_hg38p14.tsv").expanduser(), sep = "\t")
     right = pd.read_excel(f"{current_path}/SupplementaryTable1.xlsx")
