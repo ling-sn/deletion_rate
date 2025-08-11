@@ -20,7 +20,7 @@
    * Output .tsv files are saved in the same directories as the realigned .bam files
 ### Tools used in contaminant removal script
 * **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at given genomic coordinates
-  * In other words, assuming that each read in a .bam file is horizontally stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by each genomic coordinate. In each of these slices, there is a list of reads (`PileupRead` objects).
+  * In other words, assuming that each read in a .bam file is vertically stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by the genomic coordinate. Within this slice, there is a list of reads (`PileupRead` objects) containing the number of bases/deletions.
 ### When do I use this pipeline?
 This is used after running the STAR realignment script (`realignGap.py`). You can either start from the working directory that contains the `realignments` folder OR copy the `realignments` folder to a new directory.
 ### Understanding the calculate_dr SBATCH
@@ -30,26 +30,24 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 * **--folder_name:** Name of processed_fastqs folder that you wish to calculate deletion rates for. DO NOT INPUT A PATH.
 ### Datasets & calculations
 * The following two datasets were merged with a left-join:
-  * `UNUAR_motif_sites_mRNA.tsv` contains the GenBank accession number (`Chrom`) and genomic coordinate of the modified base (`GenomicModBase`) for all UNUAR sites in the human genome.
-  * `SupplementaryTable1.xlsx` contains the best-fit parameters for 256 UNUAR motif contexts (_Zhang et al., 533_).
-* The observed deletion rate at each UNUAR site was calculated with the following formula:
-
-  $$\frac{\text{Number of deletions}}{\text{Total amount of A, C, T, G, and deletions}}$$
-
-* Meanwhile, the fraction of molecules actually modified at each UNUAR site (also referred to as "real deletion rate" and "Ψ modification stoichiometry") was calculated with the following formula:
-
-  $$x = \frac{y-B}{(R-B) + A(y-R)}$$
+  * `UNUAR_motif_sites_mRNA_hg38p14.tsv` contains the GenBank accession number (_Chrom_) and genomic coordinate of the modified base (_GenomicModBase_) for all UNUAR sites in the human genome.
+  * `SupplementaryTable1.xlsx` contains the best-fit parameters for the calibration curves of 256 UNUAR motifs (_Zhang et al., 533_). They are plugged into the equation below to estimate the fraction of actual Ψ modification, which is also referred to as "RealRate" in the script.
+  
+  $$f = \large{\frac{b-r}{c \cdot (b+s-s \cdot r -1)}}$$
 
   in which:
 
   | Variable | Name | Meaning
   | --- | --- | --- |
-  | $$x$$ | Real deletion rate $$(0 < x < 1)$$ | Ψ modification stoichiometry |
-  | $$y$$ | Observed deletion rate $$(0 < y < 1)$$ | Percentage of deletions at given `GenomicModBase` |
-  | $$B$$ | Background deletion rate; `fit_B` | Measure of how often you will accidentally get a deletion rate |
-  | $$R$$ | Maximum deletion rate if site is modified 100% of the time; `fit_R` | Measure of how well actual modified sites were converted to bisulfite treated sites |
-  | $$A$$ | RT dropout ratio; `fit_A` | Ratio of times a site “falls out” when it gets hit by bisulfite |
+  | $$f$$ | Real deletion rate $$(f > 0)$$ | Ψ modification stoichiometry |
+  | $$r$$ | Observed deletion rate $$(0 < r < 1)$$ | Percentage of deletions at given `GenomicModBase` |
+  | $$b$$ | Background deletion rate | Baseline deletion rates due to experimental conditions; `fit_b` |
+  | $$s$$ | RT dropout ratio | Ratio of times a site “falls out” when it gets hit by bisulfite; `fit_s` |
+  | $$c$$ | Conversion ratio | `fit_c`
+* The observed deletion rate ($$r$$) at each UNUAR site is calculated with the following formula:
 
-  * This is a modified version of the formula from BID-pipe (_Zhang et al., 533_), as it makes use of the best-fit parameters from `SupplementaryTable1.xlsx` to bypass explicit calibration.
+  $$\frac{\text{Number of deletions}}{\text{Total amount of A, C, T, G, and deletions}}$$
+
 ### Citations
 * Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
+  * `SupplementaryTable1.xlsx`
