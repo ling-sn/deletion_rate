@@ -30,7 +30,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
         traceback.print_exc()
         raise
 
-def count_base(chunk, input_bam_name, results):
+def count_base(chunk, input_bam_name, results, key):
     bamfile = pysam.AlignmentFile(input_bam_name, "rb")
     """
     Counts number of bases/deletions for each UNUAR site
@@ -41,7 +41,7 @@ def count_base(chunk, input_bam_name, results):
         for row in chunk:
             chrom = row[0]
             mod_base = row[1]
-            base_ct = {"A": 0, "C": 0, "G": 0, "T": 0, "Deletions": 0}
+            base_ct = {key["A"]: 0, key["C"]: 0, key["G"]: 0, key["T"]: 0, key["Deletions"]: 0}
 
             pysam_pileup(bamfile, chrom, mod_base, base_ct)
 
@@ -54,17 +54,37 @@ def count_base(chunk, input_bam_name, results):
         traceback.print_exc()
         raise
 
-def process_chunk(genome_coord, input_bam_name, results):
+def process_chunk(genome_coord, input_bam_name, results, key):
     try:
         all_chunks = np.array_split(genome_coord, 100)
         with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
-            futures = [executor.submit(count_base, chunk, input_bam_name, results) for chunk in all_chunks]
+            futures = [executor.submit(count_base, chunk, input_bam_name, results, key) for chunk in all_chunks]
             for future in concurrent.futures.as_completed(futures):
                 future.result()
     except Exception as e:
         print(f"Failed to parallelize chunks: {e}")
         traceback.print_exc()
         raise
+
+def make_key(subfolder, base_key):
+    """
+    Modifies names of dictionary keys based on 
+    the Replicate # (1, 2, 3) and Sample Type (BS, NBS)
+    in a given subfolder name.
+    """
+    ## Adds replicate prefix to dictionary key names
+    for rep in ["Rep1", "Rep2", "Rep3"]:
+        if f"-{rep}-" in subfolder:
+            prefix = rep + "_"
+            break
+    
+    ## Adds sample type suffix to dictionary key names
+    for sample in ["BS", "NBS"]:
+        if f"-{sample}_" in subfolder:
+            suffix = "_" + sample
+            break
+    
+    return prefix + base_key + suffix
 
 ## main code
 def open_bam(folder_name):
@@ -85,6 +105,7 @@ def open_bam(folder_name):
         for subfolder in input_dir.iterdir():
             if subfolder.is_dir():
                 processed_folder = input_dir/f"{subfolder.name}"
+                key = {base_key: make_key(subfolder, base_key) for base_key in ["A", "C", "G", "T", "Deletions"]}
                 
                 for bam in subfolder.glob("*.bam"):
                     results = []
@@ -92,7 +113,7 @@ def open_bam(folder_name):
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
-                    process_chunk(genome_coord, input_bam_name, results)
+                    process_chunk(genome_coord, input_bam_name, results, key)
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
