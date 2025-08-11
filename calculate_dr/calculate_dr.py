@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import pysam
 import concurrent.futures
+import re
 
 def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     """
@@ -86,6 +87,19 @@ def make_key(subfolder, base_key):
     
     return prefix + base_key + suffix
 
+def grouped(folder_name):
+    """
+    Given input folder names, extract the group name.
+        EXAMPLE: '7KO-Cyto-BS_processed_fastqs' -> '7KO-Cyto'
+    """
+    try:
+        match = re.match(r"(.+)-(?:BS|NBS)_processed_fastqs", folder_name)
+    except Exception as e:
+        print(f"Failed to match input folder to group with RegEx: {e}")
+        traceback.print_exc()
+        raise
+    return match.group(1) ## return first regex capture
+
 ## main code
 def open_bam(folder_name):
     """
@@ -94,6 +108,7 @@ def open_bam(folder_name):
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
+    group_name = grouped(folder_name)
     
     left = pd.read_csv(Path("~/umms-RNAlabDATA/Software/genome_indices/UNUAR_motif_sites_mRNA_hg38p14.tsv").expanduser(), sep = "\t")
     right = pd.read_excel(f"{current_path}/SupplementaryTable1.xlsx")
@@ -104,7 +119,9 @@ def open_bam(folder_name):
     try: 
         for subfolder in input_dir.iterdir():
             if subfolder.is_dir():
-                processed_folder = input_dir/f"{subfolder.name}"
+                processed_folder = current_path/"calculations"/group_name
+                processed_folder.mkdir(exist_ok=True, parents=True)
+                
                 key = {base_key: make_key(subfolder, base_key) for base_key in ["A", "C", "G", "T", "Deletions"]}
                 
                 for bam in subfolder.glob("*.bam"):
