@@ -22,7 +22,7 @@
 * **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at given genomic coordinates
   * In other words, assuming that each read in a .bam file is vertically stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by the genomic coordinate. Within this slice, there is a list of reads (`PileupRead` objects) containing the number of bases/deletions.
 ### When do I use this pipeline?
-This is used after running the STAR realignment script (`realignGap.py`). You can either start from the working directory that contains the `realignments` folder OR copy the `realignments` folder to a new directory.
+This is used after running the STAR realignment script (`realignGap.py`). Start from the working directory that contains the `realignments` folder.
 ### Understanding the calculate_dr SBATCH
 ```
 python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
