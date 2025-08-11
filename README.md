@@ -46,7 +46,7 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
   | $$c$$ | Conversion ratio | `fit_c`
 * The observed deletion rate ($$r$$) at each UNUAR site is calculated with the following formula:
 
-  $$\frac{\text{Number of deletions}}{\text{Total amount of A, C, T, G, and deletions}}$$
+  $$\large{\frac{\text{Number of deletions}}{\text{Total amount of A, C, T, G, and deletions}}}$$
 
 ### Citations
 * Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
