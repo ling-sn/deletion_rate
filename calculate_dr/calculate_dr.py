@@ -119,7 +119,7 @@ def open_bam(folder_name):
     try: 
         for subfolder in input_dir.iterdir():
             if subfolder.is_dir():
-                processed_folder = current_path/"calculations"/group_name
+                processed_folder = current_path/"calculations"/"individual_tsv"/group_name
                 processed_folder.mkdir(exist_ok=True, parents=True)
                 
                 key = {base_key: make_key(subfolder, base_key) for base_key in ["A", "C", "G", "T", "Deletions"]}
