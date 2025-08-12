@@ -122,7 +122,7 @@ def open_bam(folder_name):
                 processed_folder = current_path/"calculations"/group_name/"individual_tsv"
                 processed_folder.mkdir(exist_ok=True, parents=True)
                 
-                key = {base_key: make_key(subfolder, base_key) for base_key in ["A", "C", "G", "T", "Deletions"]}
+                key = {base_key: make_key(subfolder, base_key) for base_key in ["A", "C", "G", "T", "Deletions", "DeletionRate", "RealRate"]}
                 
                 for bam in subfolder.glob("*.bam"):
                     results = []
@@ -136,15 +136,15 @@ def open_bam(folder_name):
                     counts = pd.DataFrame(results)
                     total_sum = counts[["A", "C", "G", "T", "Deletions"]].sum(axis = 1) ## sum across rows
                     counts["DeletionRate"] = counts["Deletions"]/total_sum
-                    renamed_counts = counts.rename(columns={"A": key["A"], "C": key["C"], "G": key["G"], "T": key["T"], "Deletions": key["Deletions"]})
                     
                     ## calculate real deletion rates
-                    df_final = pd.merge(df, renamed_counts, how = "left", on = ["Chrom", "GenomicModBase"])
-                    num = df_final["fit_b"] - df_final["DeletionRate"]
-                    denom = (df_final["fit_c"]*(df_final["fit_b"] + df_final["fit_s"] -
-                             df_final["fit_s"]*df_final["DeletionRate"]-1))
-                    df_final["RealRate"] = num/denom
-
+                    df_draft = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"])
+                    num = df_draft["fit_b"] - df_draft["DeletionRate"]
+                    denom = (df_draft["fit_c"]*(df_draft["fit_b"] + df_draft["fit_s"] -
+                             df_draft["fit_s"]*df_draft["DeletionRate"]-1))
+                    df_draft["RealRate"] = num/denom
+                    df_final = df_draft.rename(columns={"A": key["A"], "C": key["C"], "G": key["G"], "T": key["T"], "Deletions": key["Deletions"], "DeletionRate": key["DeletionRate"], "RealRate": key["RealRate"]})
+                    
                     ## add all calculations to og dataframe & save as .tsv output
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
