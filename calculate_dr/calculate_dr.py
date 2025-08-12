@@ -31,7 +31,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
         traceback.print_exc()
         raise
 
-def count_base(chunk, input_bam_name, results, key):
+def count_base(chunk, input_bam_name, results):
     bamfile = pysam.AlignmentFile(input_bam_name, "rb")
     """
     Counts number of bases/deletions for each UNUAR site
@@ -42,7 +42,7 @@ def count_base(chunk, input_bam_name, results, key):
         for row in chunk:
             chrom = row[0]
             mod_base = row[1]
-            base_ct = {key["A"]: 0, key["C"]: 0, key["G"]: 0, key["T"]: 0, key["Deletions"]: 0}
+            base_ct = {"A": 0, "C": 0, "G": 0, "T": 0, "Deletions": 0}
 
             pysam_pileup(bamfile, chrom, mod_base, base_ct)
 
@@ -55,11 +55,11 @@ def count_base(chunk, input_bam_name, results, key):
         traceback.print_exc()
         raise
 
-def process_chunk(genome_coord, input_bam_name, results, key):
+def process_chunk(genome_coord, input_bam_name, results):
     try:
         all_chunks = np.array_split(genome_coord, 100)
         with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
-            futures = [executor.submit(count_base, chunk, input_bam_name, results, key) for chunk in all_chunks]
+            futures = [executor.submit(count_base, chunk, input_bam_name, results) for chunk in all_chunks]
             for future in concurrent.futures.as_completed(futures):
                 future.result()
     except Exception as e:
@@ -95,7 +95,7 @@ def match_regex(folder_name):
     try:
         match = re.match(r"(.+)-(?:BS|NBS)_processed_fastqs", folder_name)
     except Exception as e:
-        print(f"Failed to match input folder to group with RegEx: {e}")
+        print(f"Failed to RegEx match input folder to group: {e}")
         traceback.print_exc()
         raise
     return match.group(1) ## return first regex capture
@@ -130,15 +130,16 @@ def open_bam(folder_name):
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
-                    process_chunk(genome_coord, input_bam_name, results, key)
+                    process_chunk(genome_coord, input_bam_name, results)
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
                     total_sum = counts[["A", "C", "G", "T", "Deletions"]].sum(axis = 1) ## sum across rows
                     counts["DeletionRate"] = counts["Deletions"]/total_sum
+                    renamed_counts = counts.rename(columns={"A": key["A"], "C": key["C"], "G": key["G"], "T": key["T"], "Deletions": key["Deletions"]})
                     
                     ## calculate real deletion rates
-                    df_final = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"])
+                    df_final = pd.merge(df, renamed_counts, how = "left", on = ["Chrom", "GenomicModBase"])
                     num = df_final["fit_b"] - df_final["DeletionRate"]
                     denom = (df_final["fit_c"]*(df_final["fit_b"] + df_final["fit_s"] -
                              df_final["fit_s"]*df_final["DeletionRate"]-1))
