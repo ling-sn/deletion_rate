@@ -70,11 +70,14 @@ def process_chunk(genome_coord, input_bam_name, results):
 def make_key(subfolder, base_key):
     """
     Modifies names of dictionary keys based on 
-    the Replicate # (1, 2, 3) and Sample Type (BS, NBS)
+    the Replicate # (detected via RegEx) and Sample Type (BS, NBS)
     in a given subfolder name.
     """
+    rep_matches = re.findall(r"Rep\d+", str(subfolder))
+    rep_list = sorted(set(rep_matches)) ## removes duplicate reps and sorts in ascending order
+
     ## Adds replicate prefix to dictionary key names
-    for rep in ["Rep1", "Rep2", "Rep3"]:
+    for rep in rep_list:
         if f"-{rep}-" in str(subfolder):
             prefix = rep + "_"
             break
