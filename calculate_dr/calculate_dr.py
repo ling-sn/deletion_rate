@@ -101,7 +101,7 @@ def match_regex(folder_name):
         print(f"Failed to RegEx match input folder to group: {e}")
         traceback.print_exc()
         raise
-    return match.group(1) ## return first regex capture
+    return match.group(1) ## return first capture group
 
 ## main code
 def open_bam(folder_name):
