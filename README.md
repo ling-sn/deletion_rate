@@ -1,4 +1,4 @@
-## <ins>**Calculating deletion rates at each UNUAR site after realignment**</ins>
+## <ins>**PART I: Calculating deletion rates at each UNUAR site after realignment**</ins>
 ### Necessary files
 <img src="https://github.com/user-attachments/assets/09fb0343-152f-4155-92d5-8c3004b61a74" width="400"/>
 
@@ -51,3 +51,5 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 ### Citations
 * Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
   * `SupplementaryTable1.xlsx`
+---
+## <ins>**PART II: Cleaning .tsv outputs**</ins>
