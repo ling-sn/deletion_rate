@@ -23,10 +23,8 @@ def match_regex(folder_name):
 class FilterTSV:
    def merged_output(self, df_merged, merged_colnames, rep_list):
       """
-      1. Takes all columns from merged df
-         and organizes them by BS/NBS type 
-      2. Sums up corresponding bases and deletions 
-         and creates 4 new columns per replicate
+      1. Takes all columns from merged df and organizes them by BS/NBS type 
+      2. Sums up corresponding bases and deletions and creates 4 new columns per replicate
       3. Selects the new columns
          * Reshapes each row into 2x2 matrix
          * Runs Fisher's Exact Test
