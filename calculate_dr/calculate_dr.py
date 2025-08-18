@@ -113,8 +113,8 @@ def open_bam(folder_name):
     input_dir = current_path/"realignments"/folder_name
     group_name = match_regex(folder_name)
     
-    left = pd.read_csv(Path("~/umms-RNAlabDATA/Software/genome_indices/UNUAR_motif_sites_mRNA_hg38p14.tsv").expanduser(), sep = "\t")
-    right = pd.read_excel(f"{current_path}/SupplementaryTable1.xlsx")
+    left = pd.read_csv(Path("~/umms-RNAlabDATA/Software/B-PsiD_tools/UNUAR_motif_sites_mRNA_hg38p14.tsv").expanduser(), sep = "\t")
+    right = pd.read_excel(Path("~/umms-RNAlabDATA/Software/B-PsiD_tools/Zhang_HE_NatureProtocols_2023_SupplementaryTable1.xlsx").expanduser())
 
     df = pd.merge(left, right, how = "left", on = "Motif")
     genome_coord = df[["Chrom", "GenomicModBase"]].to_numpy() ## faster processing
