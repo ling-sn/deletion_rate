@@ -51,6 +51,6 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 
 ### Citations
 * Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
-  * `SupplementaryTable1.xlsx`
+  * See "_Supplementary Table 1 and 2_"
 ---
 ## <ins>**PART II: Cleaning .tsv outputs**</ins>
