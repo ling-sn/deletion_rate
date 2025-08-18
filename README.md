@@ -1,6 +1,6 @@
 ## <ins>**PART I: Calculating deletion rates at each UNUAR site after realignment**</ins>
 ### Necessary files
-<img src="https://github.com/user-attachments/assets/09fb0343-152f-4155-92d5-8c3004b61a74" width="400"/>
+<img src="https://github.com/user-attachments/assets/904e3efb-90a5-485f-a084-577b9c461370" width="400"/>
 
 * `realignments` folder (see "_When do I use this pipeline?_" for more information)
 * `calculate_dr.py` and `calculate_dr.sbatch`
