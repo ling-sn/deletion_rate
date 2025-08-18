@@ -4,9 +4,10 @@
 
 * `realignments` folder (see "_When do I use this pipeline?_" for more information)
 * `calculate_dr.py` and `calculate_dr.sbatch`
-* `SupplementaryTable1.xlsx`
+* `Zhang_HE_NatureProtocols_2023_SupplementaryTable1.xlsx`
+  * This file is accessed from its permanent directory: `~/umms-RNAlabDATA/Software/B-PsiD_tools/Zhang_HE_NatureProtocols_2023_SupplementaryTable1.xlsx`. This path is already included in the code by default, so nothing additional needs to be done.
 * `UNUAR_motif_sites_mRNA_hg38p14.tsv`
-  * Due to its size, this file is accessed from its permanent directory: `~/umms-RNAlabDATA/Software/genome_indices/UNUAR_motif_sites_mRNA_hg38p14`. This path is already included in the code by default, so nothing additional needs to be done.
+  * This file is accessed from its permanent directory: `~/umms-RNAlabDATA/Software/B-PsiD_tools/UNUAR_motif_sites_mRNA_hg38p14.tsv`. This path is already included in the code by default, so nothing additional needs to be done.
 ### Instructions
 1. Activate conda environment via `conda activate RNA-STAR`
    * For this script, it is assumed that the `RNA-STAR` conda environment has already been installed. If it has not been installed, follow the instructions in the [star_alignment](https://github.com/ling-sn/star_alignment/blob/3fd922a164b3fb833617b1fcb8dc82e8576d75aa/README.md) README
