@@ -157,7 +157,7 @@ def clean_output(folder_name):
 
             ## Collect column and replicate names
             merged_colnames = df_merged.columns.tolist()
-            rep_matches = list(filter(lambda x: re.findall(r"Rep\d+", x), merged_colnames)) ## anonymous function that applies regex to each item in merged_colnames
+            rep_matches = [re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)] ## searches colnames for Rep(#), then put in list
             rep_list = sorted(set(rep_matches)) ## removes duplicate reps and sorts in ascending order
 
             ## Initialize class
