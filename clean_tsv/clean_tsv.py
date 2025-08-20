@@ -38,14 +38,17 @@ class FilterTSV:
             pattern_dict = {f"{rep}_Bases_BS": [col for col in merged_colnames if bs_base_pattern.match(col)],
                             f"{rep}_Bases_NBS": [col for col in merged_colnames if nbs_base_pattern.match(col)]}
 
+            newcols = [f"{rep}_TotalBases_BS",
+                       f"{rep}_TotalBases_NBS"]
+            
             fisher_cols = [f"{rep}_TotalBases_BS", 
                            f"{rep}_Deletions_BS", 
                            f"{rep}_TotalBases_NBS", 
                            f"{rep}_Deletions_NBS"]
 
-            for newcol, key in zip(fisher_cols, pattern_dict):
-               if newcol not in df_merged.columns:
-                  df_merged[newcol] = df_merged[pattern_dict[key]].sum(axis=1) ## new col = sum of list of cols from dictionary
+            for col, key in zip(newcols, pattern_dict):
+               if col not in df_merged.columns:
+                  df_merged[col] = df_merged[pattern_dict[key]].sum(axis=1) ## col = sum of list of cols from dictionary
 
             df_merged[f"{rep}_Pvalue"] = df_merged[fisher_cols].apply(lambda row: fisher_exact(row.values.reshape(2, 2))[1], axis=1) ## each row is reshaped into 2x2 matrix
          
