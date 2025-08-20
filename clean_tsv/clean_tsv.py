@@ -50,6 +50,8 @@ class FilterTSV:
             df_merged[f"{rep}_Pvalue"] = df_merged[fisher_cols].apply(lambda row: fisher_exact(row.values.reshape(2, 2))[1], axis=1) ## each row is reshaped into 2x2 matrix
          
          df_merged = df_merged.drop(columns=["index"]) ## after for loop finishes, drop index column
+         
+         return df_merged
       except Exception as e:
          print(f"Failed to calculate p-value for {rep}: {e}")
          traceback.print_exc()
@@ -62,6 +64,8 @@ class FilterTSV:
       min_val = df_filtered[col].min()
       df_dropped = pd.concat([df_dropped, df_filtered[df_filtered[col] == min_val]]) ## drop min. value if conditional mean is not satisfied
       df_filtered = df_filtered[df_filtered[col] > min_val] ## filter df to exclude min value
+
+      return df_filtered
 
    def priority_output(self, df_priority, rep_list):
       """
@@ -125,7 +129,7 @@ class FilterTSV:
          print(f"Failed to apply cutoffs from BID-Pipe protocol: {e}")
          traceback.print_exc()
          raise
-      
+
 ## main code
 def clean_output(folder_name):
     """
@@ -149,7 +153,7 @@ def clean_output(folder_name):
             df_merged = df_dict[num[0]].reset_index() ## define initial df_merged var
 
             for i in num[1:]:
-                df_merged = pd.merge(df_merged, df_dict[i].reset_index(), on = selected_colnames, how = "outer") ## merge dataframes
+                df_merged = pd.merge(df_merged, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
 
             ## Collect column and replicate names
             merged_colnames = df_merged.columns.tolist()
@@ -187,7 +191,7 @@ def clean_output(folder_name):
         print(f"Failed to create merged .tsv file: {e}")
         traceback.print_exc()
         raise
-
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Filters .tsv outputs from calculate_dr script.")
     parser.add_argument("--folder_name", help = "Name of processed_fastqs folder", required = True)
