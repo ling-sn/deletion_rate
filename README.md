@@ -10,7 +10,7 @@
   * This file is accessed from its permanent directory: `~/umms-RNAlabDATA/Software/B-PsiD_tools/UNUAR_motif_sites_mRNA_hg38p14.tsv`. This path is already included in the code by default, so nothing additional needs to be done.
 ### Instructions
 1. Activate conda environment via `conda activate RNA-STAR`
-   * For this script, it is assumed that the `RNA-STAR` conda environment has already been installed. If it has not been installed, follow the instructions in the [star_alignment](https://github.com/ling-sn/star_alignment/blob/3fd922a164b3fb833617b1fcb8dc82e8576d75aa/README.md) README
+   * For this script, it is assumed that the `RNA-STAR` conda environment has already been installed. If it has not been installed, follow the instructions in the [star_alignment](https://github.com/ling-sn/star_alignment/blob/3fd922a164b3fb833617b1fcb8dc82e8576d75aa/README.md) README.
 3. Edit `calculate_dr.sbatch` to match your experiments
    * Change the following:
      * `#SBATCH --mail-user=YOUR_UNIQNAME@umich.edu`
@@ -18,8 +18,7 @@
      * `#SBATCH --time=4:00:00`
      * Strings under `declare -a tasks=(`
 5. Run `calculate_dr.sbatch` to calculate deletion rates at each UNUAR site
-   * Output .tsv files are saved in the same directories as the realigned .bam files
-### Tools used in contaminant removal script
+### Tools used in deletion rate script
 * **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at given genomic coordinates
   * In other words, assuming that each read in a .bam file is vertically stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by the genomic coordinate. Within this slice, there is a list of reads (`PileupRead` objects) containing the number of bases/deletions.
 ### When do I use this pipeline?
@@ -54,3 +53,25 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
   * See "_Supplementary Table 1 and 2_"
 ---
 ## <ins>**PART II: Cleaning .tsv outputs**</ins>
+### Necessary files
+* `clean_tsv.py` and `clean_tsv.sbatch`
+### Instructions
+1. Activate conda environment via `conda activate RNA-STAR`
+2. Edit `clean_tsv.sbatch` to match your experiments
+   * Change the following:
+     * `#SBATCH --mail-user=YOUR_UNIQNAME@umich.edu`
+     * `#SBATCH --array=0-11%4`
+     * `#SBATCH --time=4:00:00`
+     * Strings under `declare -a tasks=(`
+3. Run `clean_tsv.sbatch` to filter the deletion sites in the .tsv files
+### Tools used in TSV filtering script
+* **scipy**
+### When do I use this pipeline?
+This is used after calculating the deletion rates at each UNUAR site (`calculate_dr.py`). Start from the working directory that contains the `calculations` folder.
+### Understanding the clean_tsv SBATCH
+```
+text
+```
+* **text:**
+### Explanation of cutoffs
+(Draft: explain the cutoffs that were applied from the paper)
