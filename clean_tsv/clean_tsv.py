@@ -146,14 +146,10 @@ def clean_output(folder_name):
             ## Merge pandas dataframes
             colnames = df_dict["df1"].columns.tolist()
             selected_colnames = ["index"] + colnames[0:17] ## columns that are always the same throughout all dfs
+            df_merged = df_dict[num[0]].reset_index() ## define initial df_merged var
 
-            for i in range(len(num)-1):
-                if i==0:
-                    ## merge df1 + df2
-                    df_merged = pd.merge(df_dict[num[i]].reset_index(), df_dict[num[i+1]].reset_index(), on = selected_colnames, how = "outer")
-                else:
-                    ## for remaining dfs after df1 + df2, overwrite existing var: df_merged = df_merged + df_dict[i+1]
-                    df_merged = pd.merge(df_merged, df_dict[num[i+1]].reset_index(), on = selected_colnames, how = "outer")
+            for i in num[1:]:
+                df_merged = pd.merge(df_merged, df_dict[i].reset_index(), on = selected_colnames, how = "outer") ## merge dataframes
 
             ## Collect column and replicate names
             merged_colnames = df_merged.columns.tolist()
