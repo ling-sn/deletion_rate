@@ -57,7 +57,7 @@ class FilterTSV:
          traceback.print_exc()
          raise
    
-   def conditional_filter(self, col):
+   def conditional_filter(self, df_filtered, df_dropped, col):
       """ 
       Use to filter by conditional mean (Cutoffs #4-5)
       """
@@ -65,7 +65,7 @@ class FilterTSV:
       df_dropped = pd.concat([df_dropped, df_filtered[df_filtered[col] == min_val]]) ## drop min. value if conditional mean is not satisfied
       df_filtered = df_filtered[df_filtered[col] > min_val] ## filter df to exclude min value
 
-      return df_filtered
+      return df_filtered, df_dropped
 
    def priority_output(self, df_priority, rep_list):
       """
@@ -105,7 +105,7 @@ class FilterTSV:
             del_col = f"{rep}_Deletions_BS"
             del_mean = df_filtered[del_col].mean()
             while del_mean <= 5 and not df_filtered.empty:
-               self.conditional_filter(del_col)
+               df_filtered, df_dropped = self.conditional_filter(df_filtered, df_dropped, del_col)
 
          ## Cutoff 5: Conditional mean (DeletionRate)
          for rep in rep_list:
@@ -123,7 +123,7 @@ class FilterTSV:
 
          print("Successfully applied cutoffs.")
 
-         return [df_filtered, df_dropped]
+         return df_filtered, df_dropped
       
       except Exception as e:
          print(f"Failed to apply cutoffs from BID-Pipe protocol: {e}")
@@ -174,12 +174,10 @@ def clean_output(folder_name):
 
             ## Save filtered .tsv (filtered)
             df_priority = df_merged.dropna()
-            dfs = filtertsv.priority_output(df_priority, rep_list)
-            df_filtered = dfs[0]
+            df_filtered, df_dropped = filtertsv.priority_output(df_priority, rep_list)
             df_filtered.to_csv(f"{processed_folder}/{group_name}_filtered.tsv", sep = "\t", index = False)
 
             ## Save discarded .tsv (non_sites)
-            df_dropped = dfs[1]
             df_dropped.to_csv(f"{processed_folder}/{group_name}_non_sites.tsv", sep = "\t", index = False)
 
             # ## Save priority .tsv (priority_filtered)
