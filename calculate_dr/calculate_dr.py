@@ -147,7 +147,6 @@ def open_bam(folder_name):
                     denom = (df_draft["fit_c"]*(df_draft["fit_b"] + df_draft["fit_s"] -
                              df_draft["fit_s"]*df_draft["DeletionRate"]-1))
                     df_draft["RealRate"] = num/denom
-                    df_final = df_draft[df_draft["RealRate"] >= 0].sort_values(by = "RealRate", ascending = False)
                     df_final = df_draft.rename(columns={"A": key["A"], "C": key["C"], "G": key["G"], "T": key["T"], "Deletions": key["Deletions"], "DeletionRate": key["DeletionRate"], "RealRate": key["RealRate"]})
                     
                     ## add all calculations to og dataframe & save as .tsv output
