@@ -19,7 +19,7 @@
      * Strings under `declare -a tasks=(`
 5. Run `calculate_dr.sbatch` to calculate deletion rates at each UNUAR site
    * Output .tsv files are saved in the same directories as the realigned .bam files
-### Tools used in contaminant removal script
+### Tools used in deletion rate script
 * **pysam** is used to read lines from .bam files AND call the `pileup()` method to access bases/deletions across all reads at given genomic coordinates
   * In other words, assuming that each read in a .bam file is vertically stacked (such as in IGV), `pileup()` takes a vertical "slice" (`PileupColumn`) at the position designated by the genomic coordinate. Within this slice, there is a list of reads (`PileupRead` objects) containing the number of bases/deletions.
 ### When do I use this pipeline?
@@ -54,3 +54,25 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
   * See "_Supplementary Table 1 and 2_"
 ---
 ## <ins>**PART II: Cleaning .tsv outputs**</ins>
+### Necessary files
+* `clean_tsv.py` and `clean_tsv.sbatch`
+### Instructions
+1. Activate conda environment via `conda activate RNA-STAR`
+2. Edit `clean_tsv.sbatch` to match your experiments
+   * Change the following:
+     * `#SBATCH --mail-user=YOUR_UNIQNAME@umich.edu`
+     * `#SBATCH --array=0-11%4`
+     * `#SBATCH --time=4:00:00`
+     * Strings under `declare -a tasks=(`
+3. Run `clean_tsv.sbatch` to filter the deletion sites in the .tsv files
+### Tools used in TSV filtering script
+* **text**
+### When do I use this pipeline?
+This is used after calculating the deletion rates at each UNUAR site (`calculate_dr.py`). Start from the working directory that contains the `calculations` folder.
+### Understanding the clean_tsv SBATCH
+```
+text
+```
+* **text:**
+### Explanation of cutoffs
+(Draft: explain the cutoffs that were applied from the paper)
