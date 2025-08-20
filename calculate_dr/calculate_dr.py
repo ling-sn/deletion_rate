@@ -134,6 +134,7 @@ def open_bam(folder_name):
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
                     process_chunk(genome_coord, input_bam_name, results)
+                    results = [dict for dict in results if dict["Deletions"]]
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
@@ -141,11 +142,12 @@ def open_bam(folder_name):
                     counts["DeletionRate"] = counts["Deletions"]/total_sum
                     
                     ## calculate real deletion rates
-                    df_draft = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"])
+                    df_draft = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna()
                     num = df_draft["fit_b"] - df_draft["DeletionRate"]
                     denom = (df_draft["fit_c"]*(df_draft["fit_b"] + df_draft["fit_s"] -
                              df_draft["fit_s"]*df_draft["DeletionRate"]-1))
                     df_draft["RealRate"] = num/denom
+                    df_final = df_draft[df_draft["RealRate"] >= 0].sort_values(by = "RealRate", ascending = False)
                     df_final = df_draft.rename(columns={"A": key["A"], "C": key["C"], "G": key["G"], "T": key["T"], "Deletions": key["Deletions"], "DeletionRate": key["DeletionRate"], "RealRate": key["RealRate"]})
                     
                     ## add all calculations to og dataframe & save as .tsv output
