@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=clean_tsv
-#SBATCH --mail-user=lingsn@umich.edu
+#SBATCH --mail-user=YOUR_UNIQNAME@umich.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --output=clean_tsv_%u_%A_%a.out
 #SBATCH --array=0-11%4
