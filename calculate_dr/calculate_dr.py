@@ -134,7 +134,6 @@ def open_bam(folder_name):
                     
                     ## count A, C, G, T and deletions @ each UNUAR site
                     process_chunk(genome_coord, input_bam_name, results)
-                    results = [dict for dict in results if dict["Deletions"]]
 
                     ## calculate observed deletion rates
                     counts = pd.DataFrame(results)
