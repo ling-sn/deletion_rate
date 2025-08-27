@@ -180,8 +180,14 @@ def clean_output(folder_name):
             df_filtered, df_dropped = filtertsv.priority_output(df_priority, rep_list)
             df_filtered.to_csv(f"{processed_folder}/{group_name}_filtered.tsv", sep = "\t", index = False)
 
-            ## Save discarded .tsv (non_sites)
-            df_dropped.to_csv(f"{processed_folder}/{group_name}_non_sites.tsv", sep = "\t", index = False)
+            ## Save filtered out rows in .tsv (non_pass & non_sites)
+            cutoff7 = df_dropped["Deletions"!=0]
+
+            df_failcut = df_dropped[cutoff7] ## rows that failed cutoffs (non_pass)
+            df_failcut.to_csv(f"{processed_folder}/{group_name}_non_pass.tsv", sep = "\t", index = False)
+
+            df_zerodel = df_dropped[~cutoff7] ## rows w/ Deletions==0 (non_site)
+            df_zerodel.to_csv(f"{processed_folder}/{group_name}_non_sites.tsv", sep = "\t", index = False) 
 
             # ## Save priority .tsv (priority_filtered)
             # """
