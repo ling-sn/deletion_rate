@@ -25,7 +25,7 @@
 # This requires a conda environment with samtools and pysam (RNA-STAR)
 # 
 # To call this script:
-# sbatch calculate_dr.sbatch
+# sbatch clean_tsv.sbatch
 ################################################################################
 
 module purge
