@@ -70,7 +70,7 @@ class FilterTSV:
 
       return df_filtered, df_dropped
 
-   def priority_output(self, df_priority, rep_list):
+   def filtered_output(self, df_merged, rep_list):
       """
       a) Adds cutoffs from BID-Pipe protocol:
          1. Pvalue across all replicates < 0.0004
@@ -83,10 +83,10 @@ class FilterTSV:
       """
       try:
          ## Cutoff 1: Pvalue
-         pval_list = df_priority.columns[df_priority.columns.str.contains(r"Pvalue$", regex=True)].tolist()
-         cutoff1 = df_priority[pval_list].lt(0.0004).all(axis=1)
-         df_filtered = df_priority[cutoff1]
-         df_dropped = df_priority[~cutoff1]
+         pval_list = df_merged.columns[df_merged.columns.str.contains(r"Pvalue$", regex=True)].tolist()
+         cutoff1 = df_merged[pval_list].lt(0.0004).all(axis=1)
+         df_filtered = df_merged[cutoff1]
+         df_dropped = df_merged[~cutoff1]
 
          ## Cutoff 2: RealRate
          realrate_list = df_filtered.columns[df_filtered.columns.str.contains(r"RealRate", regex=True)].tolist()
@@ -153,40 +153,40 @@ def clean_output(folder_name):
             ## Merge pandas dataframes
             colnames = df_dict["df1"].columns.tolist()
             selected_colnames = ["index"] + colnames[0:17] ## columns that are always the same throughout all dfs
-            df_merged = df_dict[num[0]].reset_index() ## define initial df_merged var
+            df_full = df_dict[num[0]].reset_index() ## define initial df_full var
 
             for i in num[1:]:
-                df_merged = pd.merge(df_merged, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
+                df_full = pd.merge(df_full, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
 
             ## Collect column and replicate names
-            merged_colnames = df_merged.columns.tolist()
+            merged_colnames = df_full.columns.tolist()
             rep_matches = [re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)] ## searches colnames for Rep(#), then put in list
             rep_list = sorted(set(rep_matches)) ## removes duplicate reps and sorts in ascending order
 
             ## Initialize class
             filtertsv = FilterTSV()
 
-            ## Save merged .tsv (all_sites)
-            filtertsv.merged_output(df_merged, merged_colnames, rep_list)
-            df_merged.to_csv(f"{processed_folder}/{group_name}_all_sites.tsv", sep = "\t", index = False)
-
             ## Save null .tsv (missing_data)
-            null_rows = df_merged.isnull().any(axis=1)
-            df_null = df_merged[null_rows].copy()
+            null_rows = df_full.isnull().any(axis=1)
+            df_null = df_full[null_rows].copy()
             df_null.to_csv(f"{processed_folder}/{group_name}_missing_data.tsv", sep = "\t", index = False)
 
+            ## Save merged .tsv (all_sites)
+            df_merged = df_full.dropna() ## p-val calc doesn't work w/ null values
+            filtertsv.merged_output(df_merged, merged_colnames, rep_list) ## add p-val column
+            df_merged.to_csv(f"{processed_folder}/{group_name}_all_sites.tsv", sep = "\t", index = False)
+
             ## Save filtered .tsv (filtered)
-            df_priority = df_merged.dropna()
-            df_filtered, df_dropped = filtertsv.priority_output(df_priority, rep_list)
+            df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
             df_filtered.to_csv(f"{processed_folder}/{group_name}_filtered.tsv", sep = "\t", index = False)
 
             ## Save filtered out rows in .tsv (non_pass & non_sites)
+            # (a) Rows that failed cutoffs (non_pass)
             cutoff7 = df_dropped["Deletions"!=0]
-
-            df_failcut = df_dropped[cutoff7] ## rows that failed cutoffs (non_pass)
+            df_failcut = df_dropped[cutoff7]
             df_failcut.to_csv(f"{processed_folder}/{group_name}_non_pass.tsv", sep = "\t", index = False)
-
-            df_zerodel = df_dropped[~cutoff7] ## rows w/ Deletions==0 (non_site)
+            # (b) Rows w/ Deletions==0 (non_site)
+            df_zerodel = df_dropped[~cutoff7] 
             df_zerodel.to_csv(f"{processed_folder}/{group_name}_non_sites.tsv", sep = "\t", index = False) 
 
             # ## Save priority .tsv (priority_filtered)
