@@ -51,6 +51,7 @@ class FilterTSV:
                   df_merged[col] = df_merged[pattern_dict[key]].sum(axis=1) ## col = sum of list of cols from dictionary
             
             if set(fisher_cols).issubset(df_merged.columns):
+               df_merged = df_merged.dropna(subset=fisher_cols)
                df_merged[f"{rep}_Pvalue"] = df_merged[fisher_cols].apply(lambda row: fisher_exact(row.values.reshape(2, 2))[1], axis=1) ## each row is reshaped into 2x2 matrix
          
          df_merged = df_merged.drop(columns=["index"]) ## after for loop finishes, drop index column
