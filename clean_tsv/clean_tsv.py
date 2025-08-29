@@ -49,11 +49,11 @@ class FilterTSV:
             for col, key in zip(newcols, pattern_dict):
                if col not in df_merged.columns:
                   df_merged[col] = df_merged[pattern_dict[key]].sum(axis=1) ## col = sum of list of cols from dictionary
-            
+
             if set(fisher_cols).issubset(df_merged.columns):
                df_merged = df_merged.dropna(subset=fisher_cols)
                df_merged[f"{rep}_Pvalue"] = df_merged[fisher_cols].apply(lambda row: fisher_exact(row.values.reshape(2, 2))[1], axis=1) ## each row is reshaped into 2x2 matrix
-         
+
          df_merged = df_merged.drop(columns=["index"]) ## after for loop finishes, drop index column
          
          return df_merged
@@ -135,6 +135,10 @@ class FilterTSV:
          traceback.print_exc()
          raise
 
+def create_mask(df):
+    mask = (df["Deletions"] != 0) & (~df.isnull().any(axis=1))
+    return mask
+
 ## main code
 def clean_output(folder_name):
     """
@@ -155,9 +159,14 @@ def clean_output(folder_name):
             ## Merge pandas dataframes
             colnames = df_dict["df1"].columns.tolist()
             selected_colnames = ["index"] + colnames[0:17] ## columns that are always the same throughout all dfs
-            df_full = df_dict[num[0]].reset_index() ## define initial df_full var
+            init_mask = create_mask(df_dict[num[0]]) ## drop "Deletions"==0 and null rows
+            df_full = df_dict[num[0]][init_mask].reset_index() ## create initial df_full w/ df1
+            df_dropped = df_dict[num[0]][~init_mask].reset_index() ## create initial df_dropped w/ df1
 
             for i in num[1:]:
+                mask = create_mask(df_dict[i])
+                df_dict[i] = df_dict[i][mask]
+                df_dropped = pd.concat([df_dropped, df_dict[i][~mask]])
                 df_full = pd.merge(df_full, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
 
             ## Collect column and replicate names
