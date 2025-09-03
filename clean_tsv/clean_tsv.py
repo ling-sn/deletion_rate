@@ -21,6 +21,13 @@ def match_regex(folder_name):
     return match.group(1) ## return first capture group
 
 class FilterTSV:
+   def create_mask(df, colnames):
+      ## Search colnames for Deletions -> put in list -> remove duplicates -> sort in ascending order
+      del_list = sorted(set([col for col in colnames if re.search(r"Deletions", col)]))
+      ## Pass list to dataframe -> only keep rows where Deletions == 0 and there are no nulls
+      mask = (df[del_list] != 0) & (~df.isnull().any(axis=1))
+      return mask
+
    def merged_output(self, df_merged, merged_colnames, rep_list):
       """
       1. Takes all columns from merged df and organizes them by BS/NBS type 
@@ -61,7 +68,7 @@ class FilterTSV:
          print(f"Failed to calculate p-value for {rep}: {e}")
          traceback.print_exc()
          raise
-   
+
    def conditional_filter(self, df_filtered, df_dropped, col):
       """ 
       Use to filter by conditional mean (Cutoffs #4-5)
@@ -135,10 +142,6 @@ class FilterTSV:
          traceback.print_exc()
          raise
 
-def create_mask(df):
-    mask = (df["Deletions"] != 0) & (~df.isnull().any(axis=1))
-    return mask
-
 ## main code
 def clean_output(folder_name):
     """
@@ -156,26 +159,27 @@ def clean_output(folder_name):
             listcomp = [pd.read_csv(i, sep = "\t") for i in tsv_list] ## reads in all tsv files as pandas df; access 1st df w/ listcomp[0], etc.
             df_dict = dict(zip(num, listcomp))
 
+            ## Initialize class
+            filtertsv = FilterTSV()
+
             ## Merge pandas dataframes
             colnames = df_dict["df1"].columns.tolist()
             selected_colnames = ["index"] + colnames[0:17] ## columns that are always the same throughout all dfs
-            init_mask = create_mask(df_dict[num[0]]) ## drop "Deletions"==0 and null rows
+            init_mask = filtertsv.create_mask(df_dict[num[0]], colnames) ## drop "Deletions"==0 and null rows
             df_full = df_dict[num[0]][init_mask].reset_index() ## create initial df_full w/ df1
             df_dropped = df_dict[num[0]][~init_mask].reset_index() ## create initial df_dropped w/ df1
 
             for i in num[1:]:
-                mask = create_mask(df_dict[i])
+                mask = filtertsv.create_mask(df_dict[i], colnames)
                 df_dict[i] = df_dict[i][mask]
                 df_dropped = pd.concat([df_dropped, df_dict[i][~mask]])
                 df_full = pd.merge(df_full, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
 
             ## Collect column and replicate names
             merged_colnames = df_full.columns.tolist()
-            rep_matches = [re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)] ## searches colnames for Rep(#), then put in list
-            rep_list = sorted(set(rep_matches)) ## removes duplicate reps and sorts in ascending order
 
-            ## Initialize class
-            filtertsv = FilterTSV()
+            ## Search colnames for Rep(#) -> put in list -> remove duplicates -> sort in ascending order
+            rep_list = sorted(set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)])) 
 
             ## Save null .tsv (missing_data)
             null_rows = df_full.isnull().any(axis=1)
