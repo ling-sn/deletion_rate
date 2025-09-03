@@ -163,13 +163,14 @@ def clean_output(folder_name):
             filtertsv = FilterTSV()
 
             ## Merge pandas dataframes
-            colnames = df_dict["df1"].columns.tolist()
-            selected_colnames = ["index"] + colnames[0:17] ## columns that are always the same throughout all dfs
-            init_mask = filtertsv.create_mask(df_dict[num[0]], colnames) ## drop "Deletions"==0 and null rows
+            df1_colnames = df_dict["df1"].columns.tolist()
+            selected_colnames = ["index"] + df1_colnames[0:17] ## columns that are always the same throughout all dfs
+            init_mask = filtertsv.create_mask(df_dict[num[0]], df1_colnames) ## drop "Deletions"==0 and null rows
             df_full = df_dict[num[0]].loc[init_mask].reset_index() ## create initial df_full w/ df1
             df_dropped = df_dict[num[0]].loc[~init_mask].reset_index() ## create initial df_dropped w/ df1
 
             for i in num[1:]:
+                colnames = df_dict[i].columns.tolist()
                 mask = filtertsv.create_mask(df_dict[i], colnames)
                 df_dict[i] = df_dict[i].loc[mask]
                 df_dropped = pd.concat([df_dropped, df_dict[i].loc[~mask]])
