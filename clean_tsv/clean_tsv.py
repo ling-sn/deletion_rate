@@ -1,24 +1,10 @@
 ## use RNA-STAR conda environment
 from pathlib import Path
 import traceback
-import argparse
 import pandas as pd
 import numpy as np
 import re
 from scipy.stats import fisher_exact
-
-def match_regex(folder_name):
-    """
-    Given input folder names, extract the group name.
-        EXAMPLE: '7KO-Cyto-BS_processed_fastqs' -> '7KO-Cyto'
-    """
-    try:
-        match = re.match(r"(.+)-(?:BS|NBS)_processed_fastqs", folder_name)
-    except Exception as e:
-        print(f"Failed to match input folder to group with RegEx: {e}")
-        traceback.print_exc()
-        raise
-    return match.group(1) ## return first capture group
 
 class FilterTSV:
    def create_mask(self, df, colnames):
@@ -143,75 +129,80 @@ class FilterTSV:
          raise
 
 ## main code
-def clean_output(folder_name):
+def clean_output():
     """
     Filters .tsv files in grouped folders
     """
     current_path = Path.cwd()
-    group_name = match_regex(folder_name)
-    input_folder = current_path/"calculations"/group_name/"individual_tsv"
-    processed_folder = current_path/"calculations"/group_name
+    input_dir = current_path/"calculations"
+
+    ## Initialize class
+    filtertsv = FilterTSV()
 
     try: 
-        if input_folder.is_dir():
-            tsv_list = sorted(input_folder.glob("*.tsv"), ## collect paths of tsv files and put in a list
-                              key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))) ## order by rep integer 
+        for subfolder in input_dir.iterdir():
+            tsv_folder = input_dir/subfolder/"individual_tsv"
+            processed_folder = current_path/"calculations"/subfolder
+            
+            if subfolder.is_dir():
+                tsv_list = sorted(
+                    tsv_folder.glob("*.tsv"), ## collect paths of tsv files and put in a list
+                    key = lambda x: int(re.search(r"Rep(\d+)", x).group(1)) ## order by rep integer 
+                    ) 
+                num = ["df%s" %s for s in range(1, len(tsv_list)+1)] ## creates a list of strings: df1, df2, ..., df6
+                listcomp = [pd.read_csv(i, sep = "\t") for i in tsv_list] ## reads in all tsv files as pandas df; access 1st df w/ listcomp[0], etc.
+                df_dict = dict(zip(num, listcomp))
 
-            num = ["df%s" %s for s in range(1, len(tsv_list)+1)] ## creates a list of strings: df1, df2, ..., df6
-            listcomp = [pd.read_csv(i, sep = "\t") for i in tsv_list] ## reads in all tsv files as pandas df; access 1st df w/ listcomp[0], etc.
-            df_dict = dict(zip(num, listcomp))
+                ## Merge pandas dataframes
+                df1_colnames = df_dict["df1"].columns.tolist()
+                selected_colnames = ["index"] + df1_colnames[0:17] ## columns that are always the same throughout all dfs
+                init_mask = filtertsv.create_mask(df_dict[num[0]], df1_colnames) ## drop "Deletions"==0 and null rows
+                df_full = df_dict[num[0]].loc[init_mask].reset_index() ## create initial df_full w/ df1
+                df_dropped = df_dict[num[0]].loc[~init_mask].reset_index() ## create initial df_dropped w/ df1
 
-            ## Initialize class
-            filtertsv = FilterTSV()
+                for i in num[1:]:
+                    colnames = df_dict[i].columns.tolist()
+                    mask = filtertsv.create_mask(df_dict[i], colnames)
+                    df_dict[i] = df_dict[i].loc[mask]
+                    df_dropped = pd.concat([df_dropped, df_dict[i].loc[~mask]])
+                    df_full = pd.merge(df_full, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
 
-            ## Merge pandas dataframes
-            df1_colnames = df_dict["df1"].columns.tolist()
-            selected_colnames = ["index"] + df1_colnames[0:17] ## columns that are always the same throughout all dfs
-            init_mask = filtertsv.create_mask(df_dict[num[0]], df1_colnames) ## drop "Deletions"==0 and null rows
-            df_full = df_dict[num[0]].loc[init_mask].reset_index() ## create initial df_full w/ df1
-            df_dropped = df_dict[num[0]].loc[~init_mask].reset_index() ## create initial df_dropped w/ df1
+                ## Collect column and replicate names
+                merged_colnames = df_full.columns.tolist()
 
-            for i in num[1:]:
-                colnames = df_dict[i].columns.tolist()
-                mask = filtertsv.create_mask(df_dict[i], colnames)
-                df_dict[i] = df_dict[i].loc[mask]
-                df_dropped = pd.concat([df_dropped, df_dict[i].loc[~mask]])
-                df_full = pd.merge(df_full, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
+                ## Search colnames for Rep(#) -> put in list -> remove duplicates -> sort in ascending order
+                rep_list = sorted(
+                    set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)]), 
+                    key = lambda x: int(re.search(r"Rep(\d+)", x).group(1)) ## sort by rep digit
+                    )
 
-            ## Collect column and replicate names
-            merged_colnames = df_full.columns.tolist()
+                ## Save null .tsv (missing_data)
+                null_rows = df_full.isnull().any(axis=1)
+                df_null = df_full[null_rows].copy()
+                df_null.to_csv(f"{processed_folder}/{subfolder}_missing_data.tsv", sep = "\t", index = False)
 
-            ## Search colnames for Rep(#) -> put in list -> remove duplicates -> sort in ascending order
-            rep_list = sorted(set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)]), 
-                              key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))) ## sort by rep digit
+                ## Save merged .tsv (all_sites)
+                df_merged = df_full.dropna() ## p-val calc doesn't work w/ null values
+                filtertsv.merged_output(df_merged, merged_colnames, rep_list) ## add p-val column
+                df_merged.to_csv(f"{processed_folder}/{subfolder}_all_sites.tsv", sep = "\t", index = False)
 
-            ## Save null .tsv (missing_data)
-            null_rows = df_full.isnull().any(axis=1)
-            df_null = df_full[null_rows].copy()
-            df_null.to_csv(f"{processed_folder}/{group_name}_missing_data.tsv", sep = "\t", index = False)
+                ## Save filtered .tsv (filtered)
+                df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
+                df_filtered.to_csv(f"{processed_folder}/{subfolder}_filtered.tsv", sep = "\t", index = False)
 
-            ## Save merged .tsv (all_sites)
-            df_merged = df_full.dropna() ## p-val calc doesn't work w/ null values
-            filtertsv.merged_output(df_merged, merged_colnames, rep_list) ## add p-val column
-            df_merged.to_csv(f"{processed_folder}/{group_name}_all_sites.tsv", sep = "\t", index = False)
+                ## Save filtered out rows in .tsv (non_pass & non_sites)
+                # (a) Rows that failed cutoffs (non_pass)
+                cutoff7 = df_dropped["Deletions"!=0]
+                df_failcut = df_dropped[cutoff7]
+                df_failcut.to_csv(f"{processed_folder}/{subfolder}_non_pass.tsv", sep = "\t", index = False)
+                # (b) Rows w/ Deletions==0 (non_site)
+                df_zerodel = df_dropped.loc[~cutoff7] 
+                df_zerodel.to_csv(f"{processed_folder}/{subfolder}_non_sites.tsv", sep = "\t", index = False) 
 
-            ## Save filtered .tsv (filtered)
-            df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
-            df_filtered.to_csv(f"{processed_folder}/{group_name}_filtered.tsv", sep = "\t", index = False)
-
-            ## Save filtered out rows in .tsv (non_pass & non_sites)
-            # (a) Rows that failed cutoffs (non_pass)
-            cutoff7 = df_dropped["Deletions"!=0]
-            df_failcut = df_dropped[cutoff7]
-            df_failcut.to_csv(f"{processed_folder}/{group_name}_non_pass.tsv", sep = "\t", index = False)
-            # (b) Rows w/ Deletions==0 (non_site)
-            df_zerodel = df_dropped.loc[~cutoff7] 
-            df_zerodel.to_csv(f"{processed_folder}/{group_name}_non_sites.tsv", sep = "\t", index = False) 
-
-            # ## Save priority .tsv (priority_filtered)
-            # """
-            # Drops redundant columns
-            # """
+                # ## Save priority .tsv (priority_filtered)
+                # """
+                # Drops redundant columns
+                # """
 
     except Exception as e:
         print(f"Failed to create merged .tsv file: {e}")
@@ -219,10 +210,6 @@ def clean_output(folder_name):
         raise
     
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description = "Filters .tsv outputs from calculate_dr script.")
-    parser.add_argument("--folder_name", help = "Name of processed_fastqs folder", required = True)
-    args = parser.parse_args()
-
     print("Filtering .tsv files...")
-    clean_output(args.folder_name)
+    clean_output()
     print("Process finished.")
