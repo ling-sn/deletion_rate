@@ -21,7 +21,7 @@ def match_regex(folder_name):
     return match.group(1) ## return first capture group
 
 class FilterTSV:
-   def create_mask(df, colnames):
+   def create_mask(self, df, colnames):
       ## Search colnames for Deletions -> put in list -> remove duplicates -> sort in ascending order
       del_list = sorted(set([col for col in colnames if re.search(r"Deletions", col)]))
       ## Pass list to dataframe -> only keep rows where Deletions == 0 and there are no nulls
