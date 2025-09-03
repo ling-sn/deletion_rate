@@ -154,7 +154,9 @@ def clean_output(folder_name):
 
     try: 
         if input_folder.is_dir():
-            tsv_list = [*input_folder.glob("*.tsv")] ## collect paths of tsv files and put in a list            
+            tsv_list = sorted(input_folder.glob("*.tsv"), ## collect paths of tsv files and put in a list
+                              key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))) ## order by rep integer 
+
             num = ["df%s" %s for s in range(1, len(tsv_list)+1)] ## creates a list of strings: df1, df2, ..., df6
             listcomp = [pd.read_csv(i, sep = "\t") for i in tsv_list] ## reads in all tsv files as pandas df; access 1st df w/ listcomp[0], etc.
             df_dict = dict(zip(num, listcomp))
@@ -180,7 +182,8 @@ def clean_output(folder_name):
             merged_colnames = df_full.columns.tolist()
 
             ## Search colnames for Rep(#) -> put in list -> remove duplicates -> sort in ascending order
-            rep_list = sorted(set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)])) 
+            rep_list = sorted(set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)]), 
+                              key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))) ## sort by rep digit
 
             ## Save null .tsv (missing_data)
             null_rows = df_full.isnull().any(axis=1)
