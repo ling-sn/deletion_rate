@@ -25,7 +25,7 @@ class FilterTSV:
       ## Search colnames for Deletions -> put in list -> remove duplicates -> sort in ascending order
       del_list = sorted(set([col for col in colnames if re.search(r"Deletions", col)]))
       ## Pass list to dataframe -> only keep rows where Deletions == 0 and there are no nulls
-      mask = (df[del_list] != 0) & (~df.isnull().any(axis=1))
+      mask = (df[del_list] != 0).all(axis=1) & (~df.isnull().any(axis=1))
       return mask
 
    def merged_output(self, df_merged, merged_colnames, rep_list):
