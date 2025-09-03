@@ -94,14 +94,14 @@ class FilterTSV:
          ## Cutoff 1: Pvalue
          pval_list = [col for col in df_merged.columns if re.search(r"Pvalue$", col)]
          cutoff1 = df_merged[pval_list].lt(0.0004).all(axis=1)
-         df_filtered = df_merged[cutoff1]
-         df_dropped = df_merged[~cutoff1]
+         df_filtered = df_merged.loc[cutoff1]
+         df_dropped = df_merged.loc[~cutoff1]
 
          ## Cutoff 2: RealRate
          realrate_list = [col for col in df_filtered.columns if re.search(r"RealRate", col)]
          cutoff2 = df_filtered[realrate_list].gt(0.3).all(axis=1)
-         df_filtered = df_filtered[cutoff2]
-         df_dropped = pd.concat([df_dropped, df_filtered[~cutoff2]]) ## append dropped rows to existing df
+         df_filtered = df_filtered.loc[cutoff2]
+         df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff2]]) ## append dropped rows to existing df
 
          ## Cutoff 3: Total sequencing coverage
          for rep in rep_list:
@@ -109,8 +109,8 @@ class FilterTSV:
                coverage_list = [col for col in df_filtered.columns if re.match(fr"{rep}_(TotalBases|Deletions)_{sample}", col)]
                total_sum = df_filtered[coverage_list].sum(axis=1)
                cutoff3 = total_sum.gt(20)
-               df_filtered = df_filtered[cutoff3]
-               df_dropped = pd.concat([df_dropped, df_filtered[~cutoff3]])
+               df_filtered = df_filtered.loc[cutoff3]
+               df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff3]])
 
          ## Cutoff 4: Conditional mean (Deletions)
          for rep in rep_list:
@@ -166,13 +166,13 @@ def clean_output(folder_name):
             colnames = df_dict["df1"].columns.tolist()
             selected_colnames = ["index"] + colnames[0:17] ## columns that are always the same throughout all dfs
             init_mask = filtertsv.create_mask(df_dict[num[0]], colnames) ## drop "Deletions"==0 and null rows
-            df_full = df_dict[num[0]][init_mask].reset_index() ## create initial df_full w/ df1
-            df_dropped = df_dict[num[0]][~init_mask].reset_index() ## create initial df_dropped w/ df1
+            df_full = df_dict[num[0]].loc[init_mask].reset_index() ## create initial df_full w/ df1
+            df_dropped = df_dict[num[0]].loc[~init_mask].reset_index() ## create initial df_dropped w/ df1
 
             for i in num[1:]:
                 mask = filtertsv.create_mask(df_dict[i], colnames)
-                df_dict[i] = df_dict[i][mask]
-                df_dropped = pd.concat([df_dropped, df_dict[i][~mask]])
+                df_dict[i] = df_dict[i].loc[mask]
+                df_dropped = pd.concat([df_dropped, df_dict[i].loc[~mask]])
                 df_full = pd.merge(df_full, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
 
             ## Collect column and replicate names
@@ -201,7 +201,7 @@ def clean_output(folder_name):
             df_failcut = df_dropped[cutoff7]
             df_failcut.to_csv(f"{processed_folder}/{group_name}_non_pass.tsv", sep = "\t", index = False)
             # (b) Rows w/ Deletions==0 (non_site)
-            df_zerodel = df_dropped[~cutoff7] 
+            df_zerodel = df_dropped.loc[~cutoff7] 
             df_zerodel.to_csv(f"{processed_folder}/{group_name}_non_sites.tsv", sep = "\t", index = False) 
 
             # ## Save priority .tsv (priority_filtered)
