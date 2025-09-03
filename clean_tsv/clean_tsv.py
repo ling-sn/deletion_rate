@@ -92,13 +92,13 @@ class FilterTSV:
       """
       try:
          ## Cutoff 1: Pvalue
-         pval_list = df_merged.columns[df_merged.columns.str.contains(r"Pvalue$", regex=True)].tolist()
+         pval_list = [col for col in df_merged.columns if re.search(r"Pvalue$", col)]
          cutoff1 = df_merged[pval_list].lt(0.0004).all(axis=1)
          df_filtered = df_merged[cutoff1]
          df_dropped = df_merged[~cutoff1]
 
          ## Cutoff 2: RealRate
-         realrate_list = df_filtered.columns[df_filtered.columns.str.contains(r"RealRate", regex=True)].tolist()
+         realrate_list = [col for col in df_filtered.columns if re.search(r"RealRate", col)]
          cutoff2 = df_filtered[realrate_list].gt(0.3).all(axis=1)
          df_filtered = df_filtered[cutoff2]
          df_dropped = pd.concat([df_dropped, df_filtered[~cutoff2]]) ## append dropped rows to existing df
@@ -106,7 +106,7 @@ class FilterTSV:
          ## Cutoff 3: Total sequencing coverage
          for rep in rep_list:
             for sample in ["BS", "NBS"]:
-               coverage_list = df_filtered.columns[df_filtered.columns.str.contains(fr"{rep}_(TotalBases|Deletions)_{sample}", regex=True)].tolist()
+               coverage_list = [col for col in df_filtered.columns if re.match(fr"{rep}_(TotalBases|Deletions)_{sample}", col)]
                total_sum = df_filtered[coverage_list].sum(axis=1)
                cutoff3 = total_sum.gt(20)
                df_filtered = df_filtered[cutoff3]
