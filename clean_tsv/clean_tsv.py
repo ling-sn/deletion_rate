@@ -48,8 +48,6 @@ class FilterTSV:
                arr = df_merged[fisher_cols].values.reshape(-1, 2, 2) ## for value in 4 cols, select them -> reshape into 3 dimensional array for each row -> use for numpy batch processing
                pvals = [fisher_exact(table)[1] for table in arr] ## fisher_exact(table)[1] -> selects first result of fisher's exact test, i.e., the pval
                df_merged[f"{rep}_Pvalue"] = pvals
-
-         df_merged = df_merged.drop(columns=["index"]) ## after for loop finishes, drop index column
          
          return df_merged
       except Exception as e:
