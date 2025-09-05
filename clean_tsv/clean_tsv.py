@@ -27,21 +27,30 @@ class FilterTSV:
          for rep in rep_list: 
             bs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_BS$")
             nbs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_NBS$")
-         
+
+            ## Group corresponding BS/NBS into separate lists (not modifying original df)
             pattern_dict = {f"{rep}_Bases_BS": [col for col in merged_colnames if bs_base_pattern.match(col)],
                             f"{rep}_Bases_NBS": [col for col in merged_colnames if nbs_base_pattern.match(col)]}
 
-            newcols = [f"{rep}_TotalBases_BS",
+            ## Define names of summed BS/NBS columns
+            new_cols = [f"{rep}_TotalBases_BS", 
                        f"{rep}_TotalBases_NBS"]
             
+            ## Define entries for 2x2 contigency table (Fisher's Exact Test)
             fisher_cols = [f"{rep}_TotalBases_BS", 
                            f"{rep}_Deletions_BS", 
                            f"{rep}_TotalBases_NBS", 
                            f"{rep}_Deletions_NBS"]
 
-            for col, key in zip(newcols, pattern_dict):
+            ## Zips pattern_dict and new_cols together, then sums corresponding BS/NBS bases by replicate
+            """
+            Explanation:
+            * Sum of all entries in 1st list of pattern_dict -> Stored into 1st colname in new_cols
+            * Sum of all entries in 2nd list of pattern_dict -> Stored into 2nd colname in new_cols 
+            """
+            for col, key in zip(new_cols, pattern_dict):
                if col not in df_merged.columns:
-                  df_merged[col] = df_merged[pattern_dict[key]].sum(axis=1) ## col = sum of list of cols from dictionary
+                  df_merged[col] = df_merged[pattern_dict[key]].sum(axis=1)
 
             if set(fisher_cols).issubset(df_merged.columns):
                df_merged = df_merged.dropna(subset=fisher_cols)
@@ -57,7 +66,7 @@ class FilterTSV:
 
    def conditional_filter(self, df_filtered, df_dropped, col):
       """ 
-      Use to filter by conditional mean (Cutoffs #4-5)
+      Use to filter by conditional mean (Cutoffs #4-6)
       """
       min_val = df_filtered[col].min()
       df_dropped = pd.concat([df_dropped, df_filtered[df_filtered[col] == min_val]]) ## drop min. value if conditional mean is not satisfied
@@ -107,17 +116,17 @@ class FilterTSV:
 
          ## Cutoff 5: Conditional mean (DeletionRate)
          for rep in rep_list:
-            dr_col_bs = f"{rep}_DeletionRate_BS"
-            dr_mean_bs = df_filtered[dr_col_bs].mean()
+            dr_col_bs = f"{rep}_DeletionRate_BS" ## column for corresponding DeletionRate_BS
+            dr_mean_bs = df_filtered[dr_col_bs].mean() ## mean of corresponding DeletionRate_BS column
             while dr_mean_bs <= 0.02 and not df_filtered.empty:
-               self.conditional_filter(dr_col_bs)
+               self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
 
          ## Cutoff 6: Average DeletionRate is 2x higher in BS replicate compared to NBS replicate
          for rep in rep_list:
             dr_col_nbs = f"{rep}_DeletionRate_NBS"
             dr_mean_nbs = df_filtered[dr_col_nbs].mean()
             while dr_mean_bs < 2 * dr_mean_nbs:
-               self.conditional_filter(dr_col_bs)
+               self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
 
          print("Successfully applied cutoffs.")
 
