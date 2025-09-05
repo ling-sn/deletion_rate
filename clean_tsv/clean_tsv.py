@@ -45,7 +45,9 @@ class FilterTSV:
 
             if set(fisher_cols).issubset(df_merged.columns):
                df_merged = df_merged.dropna(subset=fisher_cols)
-               df_merged[f"{rep}_Pvalue"] = df_merged[fisher_cols].apply(lambda row: fisher_exact(row.values.reshape(2, 2))[1], axis=1) ## each row is reshaped into 2x2 matrix
+               arr = df_merged[fisher_cols].values.reshape(-1, 2, 2) ## for value in 4 cols, select them -> reshape into 3 dimensional array for each row -> use for numpy batch processing
+               pvals = [fisher_exact(table)[1] for table in arr] ## fisher_exact(table)[1] -> selects first result of fisher's exact test, i.e., the pval
+               df_merged[f"{rep}_Pvalue"] = pvals
 
          df_merged = df_merged.drop(columns=["index"]) ## after for loop finishes, drop index column
          
@@ -129,7 +131,7 @@ class FilterTSV:
          raise
 
 ## main code
-def clean_output():
+def main():
     """
     Filters .tsv files in grouped folders
     """
@@ -155,17 +157,17 @@ def clean_output():
 
                 ## Merge pandas dataframes
                 df1_colnames = df_dict["df1"].columns.tolist()
-                selected_colnames = ["index"] + df1_colnames[0:17] ## columns that are always the same throughout all dfs
+                selected_colnames = df1_colnames[0:17] ## columns that are always the same throughout all dfs
                 init_mask = filtertsv.create_mask(df_dict[num[0]], df1_colnames) ## drop "Deletions"==0 and null rows
-                df_full = df_dict[num[0]].loc[init_mask].reset_index() ## create initial df_full w/ df1
-                df_dropped = df_dict[num[0]].loc[~init_mask].reset_index() ## create initial df_dropped w/ df1
+                df_full = df_dict[num[0]].loc[init_mask] ## create initial df_full w/ df1
+                df_dropped = df_dict[num[0]].loc[~init_mask] ## create initial df_dropped w/ df1
 
                 for i in num[1:]:
                     colnames = df_dict[i].columns.tolist()
                     mask = filtertsv.create_mask(df_dict[i], colnames)
                     df_dict[i] = df_dict[i].loc[mask]
                     df_dropped = pd.concat([df_dropped, df_dict[i].loc[~mask]])
-                    df_full = pd.merge(df_full, df_dict[i].reset_index(), on = selected_colnames, how = "outer")
+                    df_full = pd.merge(df_full, df_dict[i], on = selected_colnames, how = "outer")
 
                 ## Collect column and replicate names
                 merged_colnames = df_full.columns.tolist()
@@ -211,5 +213,5 @@ def clean_output():
     
 if __name__ == "__main__":
     print("Filtering .tsv files...")
-    clean_output()
+    main()
     print("Process finished.")
