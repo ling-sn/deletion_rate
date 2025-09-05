@@ -147,7 +147,7 @@ def clean_output():
             if subfolder.is_dir():
                 tsv_list = sorted(
                     tsv_folder.glob("*.tsv"), ## collect paths of tsv files and put in a list
-                    key = lambda x: int(re.search(r"Rep(\d+)", x).group(1)) ## order by rep integer 
+                    key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer 
                     ) 
                 num = ["df%s" %s for s in range(1, len(tsv_list)+1)] ## creates a list of strings: df1, df2, ..., df6
                 listcomp = [pd.read_csv(i, sep = "\t") for i in tsv_list] ## reads in all tsv files as pandas df; access 1st df w/ listcomp[0], etc.
