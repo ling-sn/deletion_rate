@@ -179,25 +179,25 @@ def main():
                 ## Save null .tsv (missing_data)
                 null_rows = df_full.isnull().any(axis=1)
                 df_null = df_full[null_rows].copy()
-                df_null.to_csv(f"{processed_folder}/{subfolder}_missing_data.tsv", sep = "\t", index = False)
+                df_null.to_csv(f"{processed_folder}/{subfolder.name}_missing_data.tsv", sep = "\t", index = False)
 
                 ## Save merged .tsv (all_sites)
                 df_merged = df_full.dropna() ## p-val calc doesn't work w/ null values
                 filtertsv.merged_output(df_merged, merged_colnames, rep_list) ## add p-val column
-                df_merged.to_csv(f"{processed_folder}/{subfolder}_all_sites.tsv", sep = "\t", index = False)
+                df_merged.to_csv(f"{processed_folder}/{subfolder.name}_all_sites.tsv", sep = "\t", index = False)
 
                 ## Save filtered .tsv (filtered)
                 df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
-                df_filtered.to_csv(f"{processed_folder}/{subfolder}_filtered.tsv", sep = "\t", index = False)
+                df_filtered.to_csv(f"{processed_folder}/{subfolder.name}_filtered.tsv", sep = "\t", index = False)
 
                 ## Save filtered out rows in .tsv (non_pass & non_sites)
                 # (a) Rows that failed cutoffs (non_pass)
                 cutoff7 = df_dropped["Deletions"!=0]
                 df_failcut = df_dropped[cutoff7]
-                df_failcut.to_csv(f"{processed_folder}/{subfolder}_non_pass.tsv", sep = "\t", index = False)
+                df_failcut.to_csv(f"{processed_folder}/{subfolder.name}_non_pass.tsv", sep = "\t", index = False)
                 # (b) Rows w/ Deletions==0 (non_site)
                 df_zerodel = df_dropped.loc[~cutoff7] 
-                df_zerodel.to_csv(f"{processed_folder}/{subfolder}_non_sites.tsv", sep = "\t", index = False) 
+                df_zerodel.to_csv(f"{processed_folder}/{subfolder.name}_non_sites.tsv", sep = "\t", index = False) 
 
                 # ## Save priority .tsv (priority_filtered)
                 # """
