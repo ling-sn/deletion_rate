@@ -104,7 +104,7 @@ def match_regex(folder_name):
     return match.group(1) ## return first capture group
 
 ## main code
-def open_bam(folder_name):
+def main(folder_name):
     """
     Opens .bam in folder
     and runs calculations
@@ -162,5 +162,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("Calculating deletion rates...")
-    open_bam(args.folder_name)
+    main(args.folder_name)
     print("Process finished.")
