@@ -45,8 +45,8 @@ class FilterTSV:
             ## Zips pattern_dict and new_cols together, then sums corresponding BS/NBS bases by replicate
             """
             Explanation:
-            * Sum of all entries in 1st list of pattern_dict -> Stored into 1st colname in new_cols
-            * Sum of all entries in 2nd list of pattern_dict -> Stored into 2nd colname in new_cols 
+            * Sum of all entries in 1st list of pattern_dict -> Stored under 1st colname in new_cols
+            * Sum of all entries in 2nd list of pattern_dict -> Stored under 2nd colname in new_cols 
             """
             for col, key in zip(new_cols, pattern_dict):
                if col not in df_merged.columns:
