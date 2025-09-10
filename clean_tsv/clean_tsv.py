@@ -79,7 +79,7 @@ class FilterTSV:
       a) Adds cutoffs from BID-Pipe protocol:
          1. Pvalue across all replicates < 0.0001
          2. RealRate across all replicates > 0.3
-         3. Total sequencing coverage for each BS|NBS replicate > 20
+         3. Total sequencing coverage for each BS and NBS replicate > 20
          4. Average Deletions for each BS replicate > 5
          5. Average DeletionRate for each BS replicate > 0.02
          6. Average DeletionRate is 2x higher in BS replicate compared to NBS replicate
