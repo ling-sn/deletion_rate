@@ -66,7 +66,7 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 ### When do I use this pipeline?
 This is used after calculating the deletion rates at each UNUAR site (`calculate_dr.py`). Start from the working directory that contains the `calculations` folder.
 ### Understanding the TSV outputs
-<img src="https://github.com/user-attachments/assets/91e2cb2b-16ca-4f10-ba4a-35ad1677d957" width="550"/>
+<img src="https://github.com/user-attachments/assets/42526737-ac71-4d51-a7a5-4b8fa9c6e384" width="550"/>
 
 * `all_sites` $=$ Merged from all individual Rep, BS, and NBS .tsv files in a given "sample group" (_e.g.,_ 7KO-Cyto, WT-Cyto)
    * To prevent premature data loss, a full outer join is used to merge the files.
