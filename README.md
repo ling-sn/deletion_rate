@@ -76,9 +76,10 @@ This is used after calculating the deletion rates at each UNUAR site (`calculate
      
      <img src="https://github.com/user-attachments/assets/630affd9-b4ce-4e74-af95-f9a6fbac015c" width="400"/>
 2. `missing_data` $=$ Rows with null data filtered out from `all_sites`
-3. `non_sites`
-4. `non_pass`
-5. `filtered`
-6. `priority_filtered`
+3. `filtered` $=$ Rows that passed the filter cutoffs (see "_Explanation of cutoffs_")
+4. `priority_filtered` $=$ Same data as `filtered`, except with all intermediate columns filtered out
+   * Created only to improve readability of final outputs.
+5. `non_pass`$=$ Rows that did not pass the filter cutoffs
+6. `non_sites` $=$ Rows where "Deletions" == 0
 ### Explanation of cutoffs
 (Draft: explain the cutoffs that were applied from the paper)
