@@ -77,7 +77,7 @@ class FilterTSV:
    def filtered_output(self, df_merged, rep_list):
       """
       a) Adds cutoffs from BID-Pipe protocol:
-         1. Pvalue across all replicates < 0.0004
+         1. Pvalue across all replicates < 0.0001
          2. RealRate across all replicates > 0.3
          3. Total sequencing coverage for each BS|NBS replicate > 20
          4. Average Deletions for each BS replicate > 5
@@ -88,7 +88,7 @@ class FilterTSV:
       try:
          ## Cutoff 1: Pvalue
          pval_list = [col for col in df_merged.columns if re.search(r"Pvalue$", col)]
-         cutoff1 = df_merged[pval_list].lt(0.0004).all(axis=1)
+         cutoff1 = df_merged[pval_list].lt(0.0001).all(axis=1)
          df_filtered = df_merged.loc[cutoff1]
          df_dropped = df_merged.loc[~cutoff1]
 
