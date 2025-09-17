@@ -44,7 +44,7 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
   | $$r$$ | Observed deletion rate $$(0 < r < 1)$$ | Percentage of deletions at given `GenomicModBase` |
   | $$b$$ | Background deletion rate | Baseline deletion rates due to experimental conditions; `fit_b` |
   | $$s$$ | RT dropout ratio | Ratio of times a site “falls out” when it gets hit by bisulfite; `fit_s` |
-  | $$c$$ | Conversion ratio | `fit_c`
+  | $$c$$ | Conversion ratio | Maximum amount of times a site can be turned into a deletion; `fit_c` |
 * The observed deletion rate ($$r$$) at each UNUAR site is calculated with the following formula:
 
   $$\large{\frac{\text{Number of deletions}}{\text{Total amount of A, C, T, G, and deletions}}}$$
