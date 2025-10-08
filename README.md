@@ -6,6 +6,7 @@
 * `calculate_dr.py` and `calculate_dr.sbatch`
 * `Zhang_HE_NatureProtocols_2023_SupplementaryTable1.xlsx`
   * This file is accessed from its permanent directory: `~/umms-RNAlabDATA/Software/B-PsiD_tools/Zhang_HE_NatureProtocols_2023_SupplementaryTable1.xlsx`. This path is already included in the code by default, so nothing additional needs to be done.
+  * Sourced from "_Supplementary Table 1 and 2_" (Zhang et al.)
 * `UNUAR_motif_sites_mRNA_hg38p14.tsv`
   * This file is accessed from its permanent directory: `~/umms-RNAlabDATA/Software/B-PsiD_tools/UNUAR_motif_sites_mRNA_hg38p14.tsv`. This path is already included in the code by default, so nothing additional needs to be done.
 ### Instructions
@@ -43,14 +44,10 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
   | $$r$$ | Observed deletion rate $$(0 < r < 1)$$ | Percentage of deletions at given `GenomicModBase` |
   | $$b$$ | Background deletion rate | Baseline deletion rates due to experimental conditions; `fit_b` |
   | $$s$$ | RT dropout ratio | Ratio of times a site “falls out” when it gets hit by bisulfite; `fit_s` |
-  | $$c$$ | Conversion ratio | `fit_c`
+  | $$c$$ | Conversion ratio | Maximum amount of times a site can be turned into a deletion; `fit_c` |
 * The observed deletion rate ($$r$$) at each UNUAR site is calculated with the following formula:
 
   $$\large{\frac{\text{Number of deletions}}{\text{Total amount of A, C, T, G, and deletions}}}$$
-
-### Citations
-* Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
-  * See "_Supplementary Table 1 and 2_"
 ---
 ## <ins>**PART II: Cleaning .tsv outputs**</ins>
 ### Necessary files
@@ -69,17 +66,30 @@ python3 calculate_dr.py --folder_name 7KO-Cyto-BS_processed_fastqs
 ### When do I use this pipeline?
 This is used after calculating the deletion rates at each UNUAR site (`calculate_dr.py`). Start from the working directory that contains the `calculations` folder.
 ### Understanding the TSV outputs
-<img src="https://github.com/user-attachments/assets/91e2cb2b-16ca-4f10-ba4a-35ad1677d957" width="550"/>
+<img src="https://github.com/user-attachments/assets/42526737-ac71-4d51-a7a5-4b8fa9c6e384" width="550"/>
 
-1. `all_sites` $=$ Merged from all individual Rep, BS, and NBS .tsv files in a given "sample group" (_e.g.,_ 7KO-Cyto, WT-Cyto)
+* `all_sites` $=$ Merged from all individual Rep, BS, and NBS .tsv files in a given "sample group" (_e.g.,_ 7KO-Cyto, WT-Cyto)
    * To prevent premature data loss, a full outer join is used to merge the files.
      
      <img src="https://github.com/user-attachments/assets/630affd9-b4ce-4e74-af95-f9a6fbac015c" width="400"/>
-2. `missing_data` $=$ Rows with null data filtered out from `all_sites`
-3. `filtered` $=$ Rows that passed the filter cutoffs (see "_Explanation of cutoffs_")
-4. `priority_filtered` $=$ Same data as `filtered`, except with all intermediate columns filtered out
+* `missing_data` $=$ Rows with null data filtered out from `all_sites`
+* `filtered` $=$ Rows that passed the filter cutoffs (see "_Explanation of cutoffs_")
+* `priority_filtered` $=$ Same data as `filtered`, except with all intermediate columns filtered out
    * Created only to improve readability of final outputs.
-5. `non_pass`$=$ Rows that did not pass the filter cutoffs
-6. `non_sites` $=$ Rows where "Deletions" == 0
+* `non_pass`$=$ Rows that did not pass the filter cutoffs
+* `non_sites` $=$ Rows where "Deletions" == 0
 ### Explanation of cutoffs
-(Draft: explain the cutoffs that were applied from the paper)
+Mammalian polyA⁺ RNA cutoffs were applied on the $p$-values, sequencing coverages, and deletion ratios in order to select for confident pseudouridine (Ψ) sites (_Zhang et al., 533_).
+
+1. $p$-value across all replicates $<10^{-4}$
+   * The $p$-values are calculated per replicate using Fisher's Exact Test, which requires the following 2x2 contingency table:
+     
+     <img src="https://github.com/user-attachments/assets/6bce465e-8db2-410d-9bc3-82dbec591570" width="300"/>
+2. `RealRate` across all replicates $>0.3$
+3. Total sequencing coverage for each BS and NBS replicate $> 20$
+4. Average `Deletions` for each BS replicate $>5$
+5. Average `DeletionRate` for each BS replicate $>0.02$
+6. Average `DeletionRate` is 2x higher in BS replicate compared to NBS replicate
+---
+## Citations
+* Zhang et al. BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution. _Nature Protocols_ 19, 517–538 (2024). https://doi.org/10.1038/s41596-023-00917-5
