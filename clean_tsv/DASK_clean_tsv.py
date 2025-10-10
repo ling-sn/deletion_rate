@@ -167,7 +167,7 @@ def main():
             df_dict = {label: dd.read_csv(str(file), sep = "\t") for label, file in zip(num, tsv_list)}
 
             ## Merge pandas dataframes
-            df1_colnames = df_dict["df1"].compute().columns.tolist()
+            df1_colnames = df_dict["df1"].columns.tolist()
             selected_colnames = df1_colnames[0:17] ## columns that are always the same throughout all dfs
             init_mask = filtertsv.create_mask(df_dict[num[0]], df1_colnames) ## drop "Deletions"==0 and null rows
             df_full = df_dict[num[0]].loc[init_mask] ## create initial df_full w/ df1
@@ -180,8 +180,12 @@ def main():
                df_dropped = dd.concat([df_dropped, df_dict[i].loc[~mask]])
                df_full = dd.merge(df_full, df_dict[i], on = selected_colnames, how = "outer")
 
+            ## Convert to parquet
+            df_full.to_parquet(processed_folder/"raw_merged.parquet", engine = "fastparquet")
+            df_parquet = dd.read_parquet(processed_folder/"raw_merged.parquet", engine = "fastparquet")
+
             ## Collect column and replicate names
-            merged_colnames = df_full.columns.tolist()
+            merged_colnames = df_parquet.columns.tolist()
 
             ## Search colnames for Rep(#) -> put in list -> remove duplicates -> sort in ascending order
             rep_list = sorted(
@@ -190,27 +194,32 @@ def main():
             )
 
             ## Save null .tsv (missing_data)
-            null_rows = df_full.isnull().any(axis=1)
-            df_null = df_full[null_rows].copy().compute()
-            df_null.to_csv(f"{processed_folder}/{subfolder.name}_missing_data.tsv", sep = "\t", index = False)
+            null_rows = df_parquet.isnull().any(axis=1)
+            df_null = df_parquet[null_rows].copy()
+            df_null.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_missing_data.tsv", 
+                           sep = "\t", index = False)
 
             ## Save merged .tsv (all_sites)
-            df_merged = df_full.dropna() ## p-val calc doesn't work w/ null values
-            filtertsv.merged_output(df_merged, merged_colnames, rep_list).compute() ## add p-val column
-            df_merged.to_csv(f"{processed_folder}/{subfolder.name}_all_sites.tsv", sep = "\t", index = False)
+            df_merged = df_parquet.dropna() ## p-val calc doesn't work w/ null values
+            filtertsv.merged_output(df_merged, merged_colnames, rep_list) ## add p-val column
+            df_merged.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_all_sites.tsv", 
+                             sep = "\t", index = False)
 
             ## Save filtered .tsv (filtered)
-            df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list).compute()
-            df_filtered.to_csv(f"{processed_folder}/{subfolder.name}_filtered.tsv", sep = "\t", index = False)
+            df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
+            df_filtered.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
+                               sep = "\t", index = False)
 
             ## Save filtered out rows in .tsv (non_pass & non_sites)
             # (a) Rows that failed cutoffs (non_pass)
             cutoff7 = df_dropped["Deletions"!=0]
-            df_failcut = df_dropped[cutoff7].compute()
-            df_failcut.to_csv(f"{processed_folder}/{subfolder.name}_non_pass.tsv", sep = "\t", index = False)
+            df_failcut = df_dropped[cutoff7]
+            df_failcut.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_non_pass.tsv", 
+                              sep = "\t", index = False)
             # (b) Rows w/ Deletions==0 (non_site)
-            df_zerodel = df_dropped.loc[~cutoff7].compute()
-            df_zerodel.to_csv(f"{processed_folder}/{subfolder.name}_non_sites.tsv", sep = "\t", index = False) 
+            df_zerodel = df_dropped.loc[~cutoff7]
+            df_zerodel.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_non_sites.tsv", 
+                              sep = "\t", index = False) 
 
             # ## Save priority .tsv (priority_filtered)
             # """
