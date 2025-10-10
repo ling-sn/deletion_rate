@@ -69,8 +69,10 @@ class FilterTSV:
       """ 
       Use to filter by conditional mean (Cutoffs #4-6)
       """
-      min_val = df_filtered[col].min()
-      df_dropped = dd.concat([df_dropped, df_filtered[df_filtered[col] == min_val]]) ## drop min. value if conditional mean is not satisfied
+      min_val = df_filtered[col].min().compute()
+      df_dropped = dd.concat([df_dropped, 
+                              df_filtered[df_filtered[col] == min_val]],
+                              ignore_index = True) ## drop min. value if conditional mean is not satisfied
       df_filtered = df_filtered[df_filtered[col] > min_val] ## filter df to exclude min value
 
       return df_filtered, df_dropped
@@ -90,8 +92,8 @@ class FilterTSV:
          ## Cutoff 1: Pvalue
          pval_list = [col for col in df_merged.columns if re.search(r"Pvalue$", col)]
          cutoff1 = df_merged[pval_list].lt(0.0001).all(axis=1)
-         df_filtered = df_merged.loc[cutoff1]
-         df_dropped = df_merged.loc[~cutoff1]
+         df_filtered = df_merged.loc[cutoff1].persist()
+         df_dropped = df_merged.loc[~cutoff1].persist()
 
          ## Cutoff 2: RealRate
          realrate_list = [col for col in df_filtered.columns if re.search(r"RealRate", col)]
@@ -111,22 +113,22 @@ class FilterTSV:
          ## Cutoff 4: Conditional mean (Deletions)
          for rep in rep_list:
             del_col = f"{rep}_Deletions_BS"
-            del_mean = df_filtered[del_col].mean()
-            while del_mean <= 5 and not df_filtered.empty:
+            del_mean = df_filtered[del_col].mean().compute()
+            while (del_mean <= 5) and not (df_filtered.empty):
                df_filtered, df_dropped = self.conditional_filter(df_filtered, df_dropped, del_col)
 
          ## Cutoff 5: Conditional mean (DeletionRate)
          for rep in rep_list:
             dr_col_bs = f"{rep}_DeletionRate_BS" ## column for corresponding DeletionRate_BS
-            dr_mean_bs = df_filtered[dr_col_bs].mean() ## mean of corresponding DeletionRate_BS column
-            while dr_mean_bs <= 0.02 and not df_filtered.empty:
+            dr_mean_bs = df_filtered[dr_col_bs].mean().compute() ## mean of corresponding DeletionRate_BS column
+            while (dr_mean_bs <= 0.02) and not (df_filtered.empty):
                self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
 
          ## Cutoff 6: Average DeletionRate is 2x higher in BS replicate compared to NBS replicate
          for rep in rep_list:
             dr_col_nbs = f"{rep}_DeletionRate_NBS"
-            dr_mean_nbs = df_filtered[dr_col_nbs].mean()
-            while dr_mean_bs < 2 * dr_mean_nbs:
+            dr_mean_nbs = df_filtered[dr_col_nbs].mean().compute()
+            while (dr_mean_bs < 2 * dr_mean_nbs):
                self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
 
          print("Successfully applied cutoffs.")
