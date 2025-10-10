@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import re
 from scipy.stats import fisher_exact
+import dask.dataframe as dd
 
 class FilterTSV:
    def create_mask(self, df, colnames):
@@ -69,7 +70,7 @@ class FilterTSV:
       Use to filter by conditional mean (Cutoffs #4-6)
       """
       min_val = df_filtered[col].min()
-      df_dropped = pd.concat([df_dropped, df_filtered[df_filtered[col] == min_val]]) ## drop min. value if conditional mean is not satisfied
+      df_dropped = dd.concat([df_dropped, df_filtered[df_filtered[col] == min_val]]) ## drop min. value if conditional mean is not satisfied
       df_filtered = df_filtered[df_filtered[col] > min_val] ## filter df to exclude min value
 
       return df_filtered, df_dropped
@@ -96,7 +97,7 @@ class FilterTSV:
          realrate_list = [col for col in df_filtered.columns if re.search(r"RealRate", col)]
          cutoff2 = df_filtered[realrate_list].gt(0.3).all(axis=1)
          df_filtered = df_filtered.loc[cutoff2]
-         df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff2]]) ## append dropped rows to existing df
+         df_dropped = dd.concat([df_dropped, df_filtered.loc[~cutoff2]]) ## append dropped rows to existing df
 
          ## Cutoff 3: Total sequencing coverage
          for rep in rep_list:
@@ -105,7 +106,7 @@ class FilterTSV:
                total_sum = df_filtered[coverage_list].sum(axis=1)
                cutoff3 = total_sum.gt(20)
                df_filtered = df_filtered.loc[cutoff3]
-               df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff3]])
+               df_dropped = dd.concat([df_dropped, df_filtered.loc[~cutoff3]])
 
          ## Cutoff 4: Conditional mean (Deletions)
          for rep in rep_list:
@@ -156,11 +157,16 @@ def main():
             tsv_list = sorted(
                ## Collect paths of .tsv files and put in list
                tsv_folder.glob("*.tsv"),
-               key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer 
+               ## Order by rep integer
+               key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1))
             ) 
-            num = ["df%s" %s for s in range(1, len(tsv_list)+1)] ## creates a list of strings: df1, df2, ..., df6
-            listcomp = [pd.read_csv(i, sep = "\t") for i in tsv_list] ## reads in all tsv files as pandas df; access 1st df w/ listcomp[0], etc.
-            df_dict = dict(zip(num, listcomp))
+
+            ## Create list of strings: df1, df2, ..., df6
+            num = ["df%s" %s for s in range(1, len(tsv_list)+1)]
+
+            ## Read in TSVs with Dask
+            ddf = dd.read_csv(tsv_list, sep = "\t")
+            df_dict = dict(zip(num, ddf))
 
             ## Merge pandas dataframes
             df1_colnames = df_dict["df1"].columns.tolist()
@@ -173,8 +179,8 @@ def main():
                colnames = df_dict[i].columns.tolist()
                mask = filtertsv.create_mask(df_dict[i], colnames)
                df_dict[i] = df_dict[i].loc[mask]
-               df_dropped = pd.concat([df_dropped, df_dict[i].loc[~mask]])
-               df_full = pd.merge(df_full, df_dict[i], on = selected_colnames, how = "outer")
+               df_dropped = dd.concat([df_dropped, df_dict[i].loc[~mask]])
+               df_full = dd.merge(df_full, df_dict[i], on = selected_colnames, how = "outer")
 
             ## Collect column and replicate names
             merged_colnames = df_full.columns.tolist()
@@ -187,25 +193,25 @@ def main():
 
             ## Save null .tsv (missing_data)
             null_rows = df_full.isnull().any(axis=1)
-            df_null = df_full[null_rows].copy()
+            df_null = df_full[null_rows].copy().compute()
             df_null.to_csv(f"{processed_folder}/{subfolder.name}_missing_data.tsv", sep = "\t", index = False)
 
             ## Save merged .tsv (all_sites)
             df_merged = df_full.dropna() ## p-val calc doesn't work w/ null values
-            filtertsv.merged_output(df_merged, merged_colnames, rep_list) ## add p-val column
+            filtertsv.merged_output(df_merged, merged_colnames, rep_list).compute() ## add p-val column
             df_merged.to_csv(f"{processed_folder}/{subfolder.name}_all_sites.tsv", sep = "\t", index = False)
 
             ## Save filtered .tsv (filtered)
-            df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
+            df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list).compute()
             df_filtered.to_csv(f"{processed_folder}/{subfolder.name}_filtered.tsv", sep = "\t", index = False)
 
             ## Save filtered out rows in .tsv (non_pass & non_sites)
             # (a) Rows that failed cutoffs (non_pass)
             cutoff7 = df_dropped["Deletions"!=0]
-            df_failcut = df_dropped[cutoff7]
+            df_failcut = df_dropped[cutoff7].compute()
             df_failcut.to_csv(f"{processed_folder}/{subfolder.name}_non_pass.tsv", sep = "\t", index = False)
             # (b) Rows w/ Deletions==0 (non_site)
-            df_zerodel = df_dropped.loc[~cutoff7] 
+            df_zerodel = df_dropped.loc[~cutoff7].compute()
             df_zerodel.to_csv(f"{processed_folder}/{subfolder.name}_non_sites.tsv", sep = "\t", index = False) 
 
             # ## Save priority .tsv (priority_filtered)
