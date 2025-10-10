@@ -154,22 +154,20 @@ def main():
          processed_folder = current_path/"calculations"/subfolder
             
          if subfolder.is_dir():
+            ## Collect paths of .tsv files and put in list
             tsv_list = sorted(
-               ## Collect paths of .tsv files and put in list
                tsv_folder.glob("*.tsv"),
-               ## Order by rep integer
-               key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1))
+               key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
             ) 
 
             ## Create list of strings: df1, df2, ..., df6
             num = ["df%s" %s for s in range(1, len(tsv_list)+1)]
 
             ## Read in TSVs with Dask
-            ddf = dd.read_csv(tsv_list, sep = "\t")
-            df_dict = dict(zip(num, ddf))
+            df_dict = {label: dd.read_csv(str(file), sep = "\t") for label, file in zip(num, tsv_list)}
 
             ## Merge pandas dataframes
-            df1_colnames = df_dict["df1"].columns.tolist()
+            df1_colnames = df_dict["df1"].compute().columns.tolist()
             selected_colnames = df1_colnames[0:17] ## columns that are always the same throughout all dfs
             init_mask = filtertsv.create_mask(df_dict[num[0]], df1_colnames) ## drop "Deletions"==0 and null rows
             df_full = df_dict[num[0]].loc[init_mask] ## create initial df_full w/ df1
