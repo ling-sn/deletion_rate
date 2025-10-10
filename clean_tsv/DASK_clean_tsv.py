@@ -181,8 +181,8 @@ def main():
                df_full = dd.merge(df_full, df_dict[i], on = selected_colnames, how = "outer")
 
             ## Convert to parquet
-            df_full.to_parquet(processed_folder/"raw_merged.parquet", engine = "fastparquet")
-            df_parquet = dd.read_parquet(processed_folder/"raw_merged.parquet", engine = "fastparquet")
+            df_full.to_parquet(processed_folder/"raw_parquet", engine = "pyarrow")
+            df_parquet = dd.read_parquet(processed_folder/"raw_parquet", engine = "pyarrow")
 
             ## Collect column and replicate names
             merged_colnames = df_parquet.columns.tolist()
