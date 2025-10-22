@@ -201,47 +201,34 @@ def main():
                key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
             ) 
 
-            ## Create list of strings: df1, df2, ..., df6
-            """
-            NOTES:
-            * Add +1 to end of range because of Python's half-open interval
-            """
-            num = ["df%s" %s for s in range(1, len(tsv_list) + 1)]
-
             ## Read in TSVs
-            """
-            NOTES:
-            * df_dict = {df1: first dask df, df2: second dask df, etc...}
-            """
-            df_dict = {label: pd.read_csv(str(file), sep = "\t") for label, file in zip(num, tsv_list)}
+            df_list = {pd.read_csv(str(file), sep = "\t") for file in tsv_list}
 
             ## Merge pandas dataframes
             """
             PART I: Create initial df_full & df_dropped w/ df1
-            * df_dict[num[0]] = df1
+            * df_list[0] = df1
             * Select out column names that are always the same throughout all dfs
             * Use create_mask() to drop null rows & rows where "Deletions" == 0
             """
-            df1_colnames = df_dict[num[0]].columns.tolist()
+            df1_colnames = df_list[0].columns.tolist()
             selected_colnames = df1_colnames[0:17]
-            init_mask = filtertsv.create_mask(df_dict[num[0]], df1_colnames) ## could change back to df_dict[num[0]]
-            df_full = df_dict[num[0]].loc[init_mask] ## could change back to df_dict[num[0]]
-            df_dropped = df_dict[num[0]].loc[~init_mask]
+            init_mask = filtertsv.create_mask(df_list[0], df1_colnames)
+            df_full = df_list[0].loc[init_mask]
+            df_dropped = df_list[0].loc[~init_mask]
 
             """
             PART II: Iteratively merge remaining dfs
-            * The range [1:] means 'Start from 2nd item in dictionary, and continue 
+            * The range [1:] means 'Start from 2nd item in list, and continue 
               looping until you reach the end'
-            * Start from num[1:] instead of num[0:] since we already initialized 1st df
-            * df_dict[i] iterates through the items (dataframes) of the dictionary
             * Output is df_full, which contains rows from all merged dfs
             """
-            for i in num[1:]:
-               colnames = df_dict[i].columns.tolist()
-               mask = filtertsv.create_mask(df_dict[i], colnames)
-               df_dict[i] = df_dict[i].loc[mask]
-               df_dropped = pd.concat([df_dropped, df_dict[i].loc[~mask]])
-               df_full = pd.merge(df_full, df_dict[i], on = selected_colnames, how = "outer")
+            for i in df_list[1:]:
+               colnames = df_list[i].columns.tolist()
+               mask = filtertsv.create_mask(df_list[i], colnames)
+               df_list[i] = df_list[i].loc[mask]
+               df_dropped = pd.concat([df_dropped, df_list[i].loc[~mask]])
+               df_full = pd.merge(df_full, df_list[i], on = selected_colnames, how = "outer")
 
             ## Sort column names
             """
@@ -259,8 +246,9 @@ def main():
             * Sort columns by those digits in ascending order using sorted() 
             """
             rep_list = sorted(
-               set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames if re.search(r"(Rep\d+)", col)]), 
-               key = lambda x: int(re.search(r"Rep(\d+)", x).group(1)) ## sort by rep digit
+               set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames 
+                    if re.search(r"(Rep\d+)", col)]), 
+                   key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))
             )
 
             ## Save merged .tsv (all_sites)
