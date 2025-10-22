@@ -147,12 +147,12 @@ def main(folder_name):
                              df_draft["fit_s"] * df_draft["DeletionRate"] - 1))
                     df_draft["RealRate"] = num/denom
                     df_final = df_draft.rename(columns = {"A": key["A"], 
-                                                        "C": key["C"], 
-                                                        "G": key["G"], 
-                                                        "T": key["T"], 
-                                                        "Deletions": key["Deletions"], 
-                                                        "DeletionRate": key["DeletionRate"], 
-                                                        "RealRate": key["RealRate"]})
+                                                          "C": key["C"], 
+                                                          "G": key["G"], 
+                                                          "T": key["T"], 
+                                                          "Deletions": key["Deletions"], 
+                                                          "DeletionRate": key["DeletionRate"], 
+                                                          "RealRate": key["RealRate"]})
                     
                     ## add all calculations to og dataframe & save as .tsv output
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
