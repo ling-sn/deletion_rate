@@ -19,7 +19,7 @@ class FilterTSV:
       mask = (df[del_list] != 0).all(axis=1) & (~df.isnull().any(axis=1))
       return mask
 
-   def merged_output(self, df_merged, merged_colnames, rep_list):
+   def merged_output(self, df_merged, rep_list, pattern_dict):
       """
       PURPOSE:
       1. Takes all columns from merged df and organizes them by BS/NBS type 
@@ -30,16 +30,7 @@ class FilterTSV:
          * Appends p-val column
       """
       try:
-         for rep in rep_list: 
-            bs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_BS$")
-            nbs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_NBS$")
-
-            ## Group corresponding BS/NBS into separate lists (not modifying original df)
-            pattern_dict = {f"{rep}_Bases_BS": [col for col in merged_colnames 
-                                                if bs_base_pattern.match(col)],
-                            f"{rep}_Bases_NBS": [col for col in merged_colnames 
-                                                 if nbs_base_pattern.match(col)]}
-
+         for rep in rep_list:
             ## Define names of summed BS/NBS columns
             new_cols = [f"{rep}_TotalBases_BS", 
                         f"{rep}_TotalBases_NBS"]
@@ -86,98 +77,6 @@ class FilterTSV:
          traceback.print_exc()
          raise
 
-   def conditional_filter(self, df_filtered, df_dropped, col):
-      """ 
-      PURPOSE:
-      Use to filter by conditional mean (Cutoffs #4-6)
-      ---
-      NOTES:
-      * Drop minimum value if conditional mean is not satisfied
-      * Filter df to exclude minimum value
-      * Return updated df_dropped and df_filtered
-      """
-      min_val = df_filtered[col].min()
-      df_dropped = pd.concat([df_dropped, 
-                              df_filtered[df_filtered[col] == min_val]],
-                              ignore_index = True)
-      df_filtered = df_filtered[df_filtered[col] > min_val]
-
-      return df_filtered, df_dropped
-
-   def filtered_output(self, df_merged, rep_list):
-      """
-      PURPOSE:
-      a) Adds cutoffs from BID-Pipe protocol:
-         1. Pvalue across all replicates < 0.0001
-         2. RealRate across all replicates > 0.3
-         3. Total sequencing coverage for each BS and NBS replicate > 20
-         4. Average Deletions for each BS replicate > 5
-         5. Average DeletionRate for each BS replicate > 0.02
-         6. Average DeletionRate is 2x higher in BS replicate compared to NBS replicate
-      b) Saves filtered and discarded rows in separate dataframes
-      """
-      try:
-         ## Cutoff 1: Pvalue
-         pval_list = [col for col in df_merged.columns if re.search(r"Pvalue$", col)]
-         cutoff1 = df_merged[pval_list].lt(0.0001).all(axis=1)
-         df_filtered = df_merged.loc[cutoff1]
-         df_dropped = df_merged.loc[~cutoff1]
-
-         ## Cutoff 2: RealRate
-         """
-         NOTES
-         * Append dropped rows to existing df
-         """
-         realrate_list = [col for col in df_filtered.columns if re.search(r"RealRate", col)]
-         cutoff2 = df_filtered[realrate_list].gt(0.3).all(axis=1)
-         df_filtered = df_filtered.loc[cutoff2]
-         df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff2]])
-
-         ## Cutoff 3: Total sequencing coverage
-         for rep in rep_list:
-            for sample in ["BS", "NBS"]:
-               coverage_list = [col for col in df_filtered.columns if 
-                                re.match(fr"{rep}_(TotalBases|Deletions)_{sample}", col)]
-               total_sum = df_filtered[coverage_list].sum(axis=1)
-               cutoff3 = total_sum.gt(20)
-               df_filtered = df_filtered.loc[cutoff3]
-               df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff3]])
-
-         ## Cutoff 4: Conditional mean (Deletions)
-         for rep in rep_list:
-            del_col = f"{rep}_Deletions_BS"
-            del_mean = df_filtered[del_col].mean()
-            while (del_mean <= 5) and not (df_filtered.empty):
-               df_filtered, df_dropped = self.conditional_filter(df_filtered, df_dropped, del_col)
-
-         ## Cutoff 5: Conditional mean (DeletionRate)
-         """
-         NOTES:
-         * dr_col_bs = Column for corresponding DeletionRate_BS
-         * dr_mean_bs = Mean of corresponding dr_col_bs
-         """
-         for rep in rep_list:
-            dr_col_bs = f"{rep}_DeletionRate_BS"
-            dr_mean_bs = df_filtered[dr_col_bs].mean()
-            while (dr_mean_bs <= 0.02) and not (df_filtered.empty):
-               self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
-
-         ## Cutoff 6: Average DeletionRate is 2x higher in BS rep compared to NBS rep
-         for rep in rep_list:
-            dr_col_nbs = f"{rep}_DeletionRate_NBS"
-            dr_mean_nbs = df_filtered[dr_col_nbs].mean()
-            while (dr_mean_bs < 2 * dr_mean_nbs):
-               self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
-
-         print("Successfully applied cutoffs.")
-
-         return df_filtered, df_dropped
-      
-      except Exception as e:
-         print(f"Failed to apply cutoffs from BID-Pipe protocol: {e}")
-         traceback.print_exc()
-         raise
-
 def main():
    """
    PURPOSE:
@@ -215,7 +114,6 @@ def main():
             selected_colnames = df1_colnames[0:17]
             init_mask = filtertsv.create_mask(df_list[0], df1_colnames)
             df_full = df_list[0].loc[init_mask]
-            df_dropped = df_list[0].loc[~init_mask]
 
             """
             PART II: Iteratively merge remaining dfs
@@ -227,7 +125,6 @@ def main():
                colnames = df_list[i].columns.tolist()
                mask = filtertsv.create_mask(df_list[i], colnames)
                df_list[i] = df_list[i].loc[mask]
-               df_dropped = pd.concat([df_dropped, df_list[i].loc[~mask]])
                df_full = pd.merge(df_full, df_list[i], on = selected_colnames, how = "outer")
 
             ## Sort column names
@@ -259,30 +156,29 @@ def main():
             - 
             """
             df_merged = df_full.dropna()
-            filtertsv.merged_output(df_merged, merged_colnames, rep_list)
+
+            ## Group corresponding BS/NBS into separate lists
+            for rep in rep_list:
+               bs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_BS$")
+               nbs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_NBS$")
+               pattern_dict = {f"{rep}_Bases_BS": [col for col in merged_colnames 
+                                                   if bs_base_pattern.match(col)],
+                               f"{rep}_Bases_NBS": [col for col in merged_colnames 
+                                                   if nbs_base_pattern.match(col)]}
+
+            filtertsv.merged_output(df_merged, rep_list, pattern_dict)
             df_merged.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_all_sites.tsv", 
                              sep = "\t", index = False)
 
-            ## Save filtered .tsv (filtered)
-            df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
-            df_filtered.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
-                               sep = "\t", index = False)
+            # ## Save filtered .tsv (filtered)
+            # df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
+            # df_filtered.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
+            #                    sep = "\t", index = False)
 
-            ## Save filtered out rows in .tsv (non_pass & non_sites)
-            # (a) Rows that failed cutoffs (non_pass)
-            cutoff7 = df_dropped["Deletions"!=0]
-            df_failcut = df_dropped[cutoff7]
-            df_failcut.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_non_pass.tsv", 
-                              sep = "\t", index = False)
-            # (b) Rows w/ Deletions==0 (non_site)
-            df_zerodel = df_dropped.loc[~cutoff7]
-            df_zerodel.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_non_sites.tsv", 
-                              sep = "\t", index = False) 
-
-            # ## Save priority .tsv (priority_filtered)
-            # """
-            # Drops redundant columns
-            # """
+            # # ## Save priority .tsv (priority_filtered)
+            # # """
+            # # Drops redundant columns
+            # # """
 
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
