@@ -157,7 +157,7 @@ def main(folder_name):
                                                           "DeletionRate": key["DeletionRate"], 
                                                           "RealRate": key["RealRate"]})
                     
-                    ## Apply filter conditions based on filetype
+                    ## Apply filter conditions based on filename
                     """
                     WT:
                     * BS files must have DeletionRate values of >= 0.8
