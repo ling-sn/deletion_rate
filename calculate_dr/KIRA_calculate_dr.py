@@ -92,7 +92,8 @@ def make_key(subfolder, base_key):
 
 def match_regex(folder_name):
     """
-    Given input folder names, extract the group name.
+    Given input folder names, extract the group name
+    by returning the first capture group in RegEx.
         EXAMPLE: '7KO-Cyto-BS_processed_fastqs' -> '7KO-Cyto'
     """
     try:
@@ -101,7 +102,7 @@ def match_regex(folder_name):
         print(f"Failed to RegEx match input folder to group: {e}")
         traceback.print_exc()
         raise
-    return match.group(1) ## return first capture group
+    return match.group(1)
 
 ## main code
 def main(folder_name):
@@ -129,18 +130,20 @@ def main(folder_name):
                 
                 for bam in subfolder.glob("*.bam"):
                     results = []
-                    input_bam_name = Path(bam) ## turn string from list back into filepath
+
+                    ## Turn string from list back into filepath
+                    input_bam_name = Path(bam)
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
-                    ## count A, C, G, T and deletions @ each UNUAR site
+                    ## Count A, C, G, T and deletions @ each UNUAR site
                     process_chunk(genome_coord, input_bam_name, results)
 
-                    ## calculate observed deletion rates
+                    ## Calculate observed deletion rates
                     counts = pd.DataFrame(results)
                     total_sum = counts[["A", "C", "G", "T", "Deletions"]].sum(axis = 1) ## sum across rows
                     counts["DeletionRate"] = counts["Deletions"]/total_sum
                     
-                    ## calculate real deletion rates
+                    ## Calculate real deletion rates
                     df_draft = pd.merge(df, counts, how = "left", on = ["Chrom", "GenomicModBase"]).dropna()
                     num = df_draft["fit_b"] - df_draft["DeletionRate"]
                     denom = (df_draft["fit_c"] * (df_draft["fit_b"] + df_draft["fit_s"] -
@@ -154,7 +157,26 @@ def main(folder_name):
                                                           "DeletionRate": key["DeletionRate"], 
                                                           "RealRate": key["RealRate"]})
                     
-                    ## add all calculations to og dataframe & save as .tsv output
+                    ## Apply filter conditions based on filetype
+                    """
+                    WT:
+                    * BS files must have DeletionRate values of >= 0.8
+                    * NBS files must have DeletionRate values of <= 0.1
+                    ---
+                    Mutation (PUS7KO):
+                    * BS files must have DeletionRate values of <= 0.1
+                    """
+                    if re.match(fr"WT.*", str(folder_name)):
+                        if re.search(fr"_BS$", str(key["DeletionRate"])):
+                            # TODO: Keep only DeletionRate >= 0.8
+                        else:
+                            # TODO: Keep only DeletioNRate <= 0.1
+
+                    if re.match(fr"7KO", str(folder_name)):
+                        if re.search(fr"_BS$", str(key["DeletionRate"])):
+                            # TODO: Keep only DeletionRate <= 0.1
+                    
+                    ## Save as .tsv output
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
