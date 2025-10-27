@@ -148,16 +148,15 @@ def main():
                    key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))
             )
 
-            ## Save merged .tsv (all_sites)
             """
             NOTES:
-            * Drop nulls because p-val calculations don't work otherwise 
-            * Use merged_output() class function to add p-val column
-            - 
+            * Drop nulls to ensure deletion rates for all 3 replicates
+            * Calculate p-vals
+            * Sort DeletionRate by descending order
+            * Keep only first 50 rows
             """
-            df_merged = df_full.dropna()
-
             ## Group corresponding BS/NBS into separate lists
+            df_merged = df_full.dropna()
             for rep in rep_list:
                bs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_BS$")
                nbs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_NBS$")
@@ -166,19 +165,21 @@ def main():
                                f"{rep}_Bases_NBS": [col for col in merged_colnames 
                                                    if nbs_base_pattern.match(col)]}
 
+            ## Run Fisher's Exact Test (p-values)
             filtertsv.merged_output(df_merged, rep_list, pattern_dict)
-            df_merged.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_all_sites.tsv", 
-                             sep = "\t", index = False)
 
-            # ## Save filtered .tsv (filtered)
-            # df_filtered, df_dropped = filtertsv.filtered_output(df_merged, rep_list)
-            # df_filtered.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
-            #                    sep = "\t", index = False)
-
-            # # ## Save priority .tsv (priority_filtered)
-            # # """
-            # # Drops redundant columns
-            # # """
+            ## Sort by DeletionRate and keep first 50 rows
+            dr_list = [col for col in df_merged.columns if re.search(r"DeletionRate", col)]
+            sort_criteria = df_merged[dr_list].sort_values(by = dr_list, ascending = False).head(50)
+            df_final = df_merged.loc[sort_criteria]
+            df_final.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
+                               sep = "\t", index = False)
+            
+            ## Drop intermediate columns for priority .tsv
+            drop_cols = [col for col in df_final.columns if re.search(fr"Rep(\d+)")]
+            df_priority = df_final.drop(columns = drop_cols)
+            df_priority.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_priority.tsv",
+                               sep = "\t", index = False)
 
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
