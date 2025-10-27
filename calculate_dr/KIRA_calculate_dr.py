@@ -20,7 +20,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     * pileupcolumn.set_min_base_quality(0): Prevents pysam from filtering
       on base quality
     * base = pileupread.alignment.query_sequence[pileupread.query_position]:
-      Taken from example in manual; returns base letter
+      Taken from example in pysam manual; returns base letter
 
     """
     try:
@@ -197,29 +197,24 @@ def main(folder_name):
                     Mutation (PUS7KO):
                     * BS files must have DeletionRate values of <= 0.1
                     """
-                    dr_bs = [col for col in df.final.columns if re.search(fr"DeletionRate_BS$", col)]
+                    dr_pattern = key["DeletionRate"]
 
-                    dr_nbs = [col for col in df.final.columns if re.search(fr"DeletionRate_NBS$", col)]
-
-                    dr_bs = re.compile(fr"DeletionRate_BS$"
-                                       
                     if re.match(fr"WT.*", str(folder_name)):
-                        if re.compile(fr"DeletionRate_BS$", str(key["DeletionRate"])):
-
-                            cutoff1 = df_final[]
-                            # TODO: Keep only DeletionRate >= 0.8
-                        else:
-                            # TODO: Keep only DeletioNRate <= 0.1
+                        if "_BS" in dr_pattern:
+                            df_final = df_final[dr_pattern].ge(0.8).all(axis=1)
+                        else: 
+                            df_final = df_final(dr_pattern).le(0.1).all(axis=1)
 
                     if re.match(fr"7KO", str(folder_name)):
-                        if re.search(fr"_BS$", str(key["DeletionRate"])):
-                            # TODO: Keep only DeletionRate <= 0.1
+                        if "_BS" in dr_pattern:
+                            df_final = df_final[dr_pattern].le(0.1).all(axis=1)
                     
                     ## Save as .tsv output
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
-        print(f"Failed to calculate observed & real deletion rates in {folder_name} and save as .tsv: {e}")
+        print("Failed to calculate observed & real deletion rates in"
+              f"{folder_name} and save as .tsv: {e}")
         traceback.print_exc()
         raise
 
