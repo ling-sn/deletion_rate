@@ -199,18 +199,19 @@ def main(folder_name):
                     """
                     dr_pattern = key["DeletionRate"]
 
-                    if re.match(fr"WT.*", str(folder_name)):
-                        if "_BS" in dr_pattern:
-                            df_final = df_final[dr_pattern].ge(0.8).all(axis=1)
-                        else: 
-                            df_final = df_final[dr_pattern].le(0.1).all(axis=1)
+                    if re.match(fr"(WT|7KO).*", str(folder_name)):
+                        if re.match(fr"WT.*", str(folder_name)):
+                            if "_BS" in dr_pattern:
+                                df_final = df_final[dr_pattern].ge(0.8).all(axis=1)
+                            else: 
+                                df_final = df_final[dr_pattern].le(0.1).all(axis=1)
 
-                    if re.match(fr"7KO", str(folder_name)):
-                        if "_BS" in dr_pattern:
-                            df_final = df_final[dr_pattern].le(0.1).all(axis=1)
+                        if re.match(fr"7KO.*", str(folder_name)):
+                            if "_BS" in dr_pattern:
+                                df_final = df_final[dr_pattern].le(0.1).all(axis=1)
                     
-                    ## Save as .tsv output
-                    df_final.to_csv(output_tsv_name, sep = "\t", index = False)
+                        ## Save as .tsv output
+                        df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
         print("Failed to calculate observed & real deletion rates in"
