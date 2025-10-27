@@ -199,6 +199,7 @@ def main(folder_name):
                     """
                     dr_pattern = key["DeletionRate"]
 
+                    ## Only output files if WT or 7KO
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
                         if re.match(fr"WT.*", str(folder_name)):
                             if "_BS" in dr_pattern:
