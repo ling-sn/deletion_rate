@@ -203,7 +203,7 @@ def main(folder_name):
                         if "_BS" in dr_pattern:
                             df_final = df_final[dr_pattern].ge(0.8).all(axis=1)
                         else: 
-                            df_final = df_final(dr_pattern).le(0.1).all(axis=1)
+                            df_final = df_final[dr_pattern].le(0.1).all(axis=1)
 
                     if re.match(fr"7KO", str(folder_name)):
                         if "_BS" in dr_pattern:
