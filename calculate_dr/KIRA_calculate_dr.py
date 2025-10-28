@@ -135,7 +135,7 @@ def main(folder_name):
 
     NOTES:
     * Use .to_numpy() in genome_coord for faster processing
-    * Specify (axis = 0) to do operations across rows
+    * Specify (axis = 1) to do operations across rows
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
@@ -203,13 +203,13 @@ def main(folder_name):
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
                         if re.match(fr"WT.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[dr_pattern].ge(0.8).all(axis = 0)
+                                df_final = df_final[dr_pattern].ge(0.8).all(axis = 1)
                             else: 
-                                df_final = df_final[dr_pattern].le(0.1).all(axis = 0)
+                                df_final = df_final[dr_pattern].le(0.1).all(axis = 1)
 
                         if re.match(fr"7KO.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[dr_pattern].le(0.1).all(axis = 0)
+                                df_final = df_final[dr_pattern].le(0.1).all(axis = 1)
                     
                         ## Save as .tsv output
                         df_final.to_csv(output_tsv_name, sep = "\t", index = False)
