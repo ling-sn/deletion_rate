@@ -215,7 +215,7 @@ def main(folder_name):
                         df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
-        print("Failed to calculate observed & real deletion rates in"
+        print("Failed to calculate observed & real deletion rates in "
               f"{folder_name} and save as .tsv: {e}")
         traceback.print_exc()
         raise
