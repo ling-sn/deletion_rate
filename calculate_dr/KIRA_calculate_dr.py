@@ -97,7 +97,7 @@ def make_key(subfolder, base_key):
     * for sample in ['BS', 'NBS']: Adds sample type suffix to dict key names
     """
     rep_matches = re.findall(r"Rep\d+", str(subfolder))
-    rep_list = sorted(set(rep_matches))
+    rep_list = sorted(set(rep_matches), key = lambda x: int(x[3:]))
 
     for rep in rep_list:
         if f"-{rep}-" in str(subfolder):
@@ -132,10 +132,6 @@ def main(folder_name):
     """
     PURPOSE: 
     Opens .bam in folder and runs calculations
-
-    NOTES:
-    * Use .to_numpy() in genome_coord for faster processing
-    * Specify (axis = 1) to do operations across rows
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
@@ -203,14 +199,14 @@ def main(folder_name):
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
                         if re.match(fr"WT.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[dr_pattern].ge(0.8).all(axis = 1)
+                                df_final = df_final[df_final[dr_pattern].ge(0.8)]
                             else: 
-                                df_final = df_final[dr_pattern].le(0.1).all(axis = 1)
+                                df_final = df_final[df_final[dr_pattern].le(0.1)]
 
                         if re.match(fr"7KO.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[dr_pattern].le(0.1).all(axis = 1)
-                    
+                                df_final = df_final[df_final[dr_pattern].le(0.1)]
+
                         ## Save as .tsv output
                         df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
