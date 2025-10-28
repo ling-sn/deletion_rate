@@ -170,9 +170,9 @@ def main():
 
             ## Sort by DeletionRate and keep first 50 rows
             dr_list = [col for col in df_merged.columns if re.search(r"DeletionRate", col)]
-            sort_criteria = df_merged[dr_list].sort_values(by = dr_list, ascending = False).head(50)
+            sort_criteria = df_merged[dr_list].sort_values(by = dr_list, ascending = False)
             df_final = df_merged.loc[sort_criteria]
-            df_final.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
+            df_final.head(50).to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
                                sep = "\t", index = False)
             
             ## Drop intermediate columns for priority .tsv
