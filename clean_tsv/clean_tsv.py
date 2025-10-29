@@ -86,7 +86,7 @@ class FilterTSV:
          traceback.print_exc()
          raise
 
-   def average_filter(self, df_filtered, df_dropped, colname, cols):
+   def filter_means(self, df_filtered, df_dropped, colname, cols):
       """
       PURPOSE:
       * Use to filter by average (Cutoffs #4-6)
@@ -155,21 +155,21 @@ class FilterTSV:
          avg_del_bs = "AvgDeletionCt_BS"
          del_col_bs = [col for col in df_filtered.columns 
                        if re.search(r"_Deletions_BS$*", col)]
-         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped, 
+         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped, 
                                                        avg_del_bs, del_col_bs)
 
          ## Cutoff 5: Average DeletionRate (BS)
          avg_dr_bs = "AvgDeletionRate_BS"
          dr_col_bs = [col for col in df_filtered.columns 
                       if re.search(r"_DeletionRate_BS$*", col)]
-         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped,
+         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped,
                                                        avg_dr_bs, dr_col_bs)
 
          ## Cutoff 6: Average DeletionRate is 2x higher in BS compared to NBS
          avg_dr_nbs = "AvgDeletionRate_NBS"
          dr_col_nbs = [col for col in df_filtered.columns 
                        if re.search(r"_DeletionRate_NBS$*", col)]
-         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped,
+         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped,
                                                        avg_dr_nbs, dr_col_nbs)
          
          cutoff6 = df_filtered[avg_dr_bs] >= 2 * df_filtered[avg_dr_nbs]
