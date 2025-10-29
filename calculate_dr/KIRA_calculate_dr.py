@@ -1,4 +1,4 @@
-## use RNA-STAR conda environment
+## Use RNA-STAR conda environment
 from pathlib import Path
 import traceback
 import argparse
@@ -8,7 +8,8 @@ import pysam
 import concurrent.futures
 import re
 
-pd.options.mode.chained_assignment = None  # default = "warn"
+## Disable .loc indexing warning
+pd.options.mode.chained_assignment = None
 
 def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     """
