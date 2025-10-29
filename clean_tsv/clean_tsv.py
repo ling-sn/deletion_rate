@@ -92,12 +92,15 @@ class FilterTSV:
    def average_filter(self, df_filtered, df_dropped, colname, cols):
       """
       PURPOSE:
-      Use to filter by average (Cutoffs #4-6)
+      * Use to filter by average (Cutoffs #4-6)
+      * Calculate standard deviation from average calculation
       """
-      ## For DeletionRate (NBS), simply calculate avg column
       df_filtered[colname] = df_filtered[cols].mean(axis = 1)
+      
+      std_colname = colname.replace("Avg", "Std")
+      df_filtered[std_colname] = df_filtered[cols].std(axis = 1)
 
-      ## For DeletionCt + DeletionRate (BS), calculate and filter avg columns
+      ## If BS, apply filters to average columns
       if "_BS" in colname:
          if "DeletionCt" in colname:
             df_filtered[colname] = df_filtered[colname].ge(5)
