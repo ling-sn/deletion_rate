@@ -21,7 +21,6 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
       on base quality
     * base = pileupread.alignment.query_sequence[pileupread.query_position]:
       Taken from example in pysam manual; returns base letter
-
     """
     try:
         for pileupcolumn in bamfile.pileup(str(chrom), 
