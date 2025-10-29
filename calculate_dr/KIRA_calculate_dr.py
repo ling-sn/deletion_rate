@@ -220,6 +220,7 @@ def main(folder_name):
                                 df_final = kept_cov[kept_cov[dr_pattern].le(0.1)]
 
                         ## Save as .tsv output
+                        df_final = df_final.sort_values(by = dr_pattern, ascending = False)
                         df_final.head(50).to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
