@@ -8,9 +8,6 @@ import pysam
 import concurrent.futures
 import re
 
-## Disable .loc indexing warning
-pd.options.mode.chained_assignment = None
-
 def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     """
     PURPOSE:
