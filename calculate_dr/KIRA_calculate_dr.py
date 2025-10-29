@@ -176,6 +176,7 @@ def main(folder_name):
                     denom = (df_draft["fit_c"] * (df_draft["fit_b"] + df_draft["fit_s"] -
                              df_draft["fit_s"] * df_draft["DeletionRate"] - 1))
                     df_draft["RealRate"] = num/denom
+                    df_draft = df_draft[df_draft["RealRate"]].ge(0.3)
                     df_final = df_draft.rename(columns = {"A": key["A"], 
                                                           "C": key["C"], 
                                                           "G": key["G"], 
@@ -183,7 +184,7 @@ def main(folder_name):
                                                           "Deletions": key["Deletions"], 
                                                           "DeletionRate": key["DeletionRate"], 
                                                           "RealRate": key["RealRate"]})
-                    
+
                     ## Apply filter conditions based on filename
                     """
                     WT:
