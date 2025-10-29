@@ -12,7 +12,7 @@ class FilterTSV:
       NOTES:
       * Select columns that contain "Deletions" and put them in a list
       * Use set() to remove duplicates, since sets can only contain unique vals
-      * Pass column names in list to dataframe to create a mask -> drop rows
+      * Pass column names in list to dataframe to create a mask that drops rows
         where Deletions == 0 and there are nulls
       """
       del_list = set([col for col in colnames if re.search(r"Deletions", col)])
@@ -72,35 +72,38 @@ class FilterTSV:
               -> Reshape the 4 columns into separate 3D arrays of size 2x2
                  (these will be our 2x2 tables)
               -> Use these arrays for numpy batch processing
-            * Run Fisher's Exact Test (scipy) on each table, then select first result
+            * Run Fisher's Exact Test (scipy) on each table, then select second result
               of test AKA the p-val using 'fisher_exact(table)[1]'
+            * Keep rows where Pvalue <= 0.0001
             """
             if set(fisher_cols).issubset(df_merged.columns):
                df_merged = df_merged.dropna(subset = fisher_cols)
                arr = df_merged[fisher_cols].values.reshape(-1, 2, 2) 
                pvals = [fisher_exact(table)[1] for table in arr]
                df_merged[f"{rep}_Pvalue"] = pvals
+
+            df_merged = df_merged[df_merged[f"{rep}_Pvalue"]].le(0.0001)
          return df_merged
       except Exception as e:
          print(f"Failed to calculate p-value for {rep}: {e}")
          traceback.print_exc()
          raise
 
-   def conditional_filter(self, df_filtered, df_dropped, col):
-      """ 
-      PURPOSE:
-      Use to filter by conditional mean (Cutoffs #4-6)
-      ---
-      NOTES:
-      * Drop minimum value if conditional mean is not satisfied
-      * Filter df to exclude minimum value
-      * Return updated df_dropped and df_filtered
+   def average_filter(self, df_filtered, df_dropped, colname, cols):
       """
-      min_val = df_filtered[col].min()
-      df_dropped = pd.concat([df_dropped, 
-                              df_filtered[df_filtered[col] == min_val]],
-                              ignore_index = True)
-      df_filtered = df_filtered[df_filtered[col] > min_val]
+      PURPOSE:
+      Use to filter by average (Cutoffs #4-6)
+      """
+      ## For DeletionRate (NBS), simply calculate avg column
+      df_filtered[colname] = df_filtered[cols].mean(axis = 1)
+
+      ## For DeletionCt + DeletionRate (BS), calculate and filter avg columns
+      if "_BS" in colname:
+         if "DeletionCt" in colname:
+            df_filtered[colname] = df_filtered[colname].ge(5)
+         elif "DeletionRate" in colname:
+            df_filtered[colname] = df_filtered[colname].ge(0.02)
+         df_dropped = pd.concat([df_dropped, df_filtered.loc[~df_filtered[colname]]])
 
       return df_filtered, df_dropped
 
@@ -108,18 +111,19 @@ class FilterTSV:
       """
       PURPOSE:
       a) Adds cutoffs from BID-Pipe protocol:
-         1. Pvalue across all replicates < 0.0001
-         2. RealRate across all replicates > 0.3
-         3. Total sequencing coverage for each BS and NBS replicate > 20
-         4. Average Deletions across all BS replicates > 5
-         5. Average DeletionRate across all BS replicates > 0.02
-         6. Average DeletionRate is 2x higher in BS replicate compared to NBS replicate
+         1. Pvalue across all replicates <= 0.0001
+         2. RealRate across all replicates >= 0.3
+         3. Total sequencing coverage for each BS and NBS replicate >= 20
+         4. Average Deletions across all BS replicates >= 5
+         5. Average DeletionRate across all BS replicates >= 0.02
+         6. Average DeletionRate is 2x higher in BS compared to NBS
       b) Saves filtered and discarded rows in separate dataframes
       """
       try:
          ## Cutoff 1: Pvalue
-         pval_list = [col for col in df_merged.columns if re.search(r"Pvalue$", col)]
-         cutoff1 = df_merged[pval_list].lt(0.0001).all(axis=1)
+         pval_list = [col for col in df_merged.columns 
+                      if re.search(r"Pvalue$", col)]
+         cutoff1 = df_merged[pval_list].le(0.0001).all(axis=1)
          df_filtered = df_merged.loc[cutoff1]
          df_dropped = df_merged.loc[~cutoff1]
 
@@ -128,8 +132,9 @@ class FilterTSV:
          NOTES
          * Append dropped rows to existing df
          """
-         realrate_list = [col for col in df_filtered.columns if re.search(r"RealRate", col)]
-         cutoff2 = df_filtered[realrate_list].gt(0.3).all(axis=1)
+         realrate_list = [col for col in df_filtered.columns 
+                          if re.search(r"RealRate", col)]
+         cutoff2 = df_filtered[realrate_list].ge(0.3).all(axis=1)
          df_filtered = df_filtered.loc[cutoff2]
          df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff2]])
 
@@ -138,36 +143,35 @@ class FilterTSV:
             for sample in ["BS", "NBS"]:
                coverage_list = [col for col in df_filtered.columns if 
                                 re.match(fr"{rep}_(TotalBases|Deletions)_{sample}", col)]
-               total_sum = df_filtered[coverage_list].sum(axis=1)
-               cutoff3 = total_sum.gt(20)
+               total_sum = df_filtered[coverage_list].sum(axis = 1)
+               cutoff3 = total_sum.ge(20)
                df_filtered = df_filtered.loc[cutoff3]
                df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff3]])
 
-         ## Cutoff 4: Conditional mean (Deletions)
-         for rep in rep_list:
-            del_col = f"{rep}_Deletions_BS"
-            del_mean = df_filtered[del_col].mean()
-            while (del_mean <= 5) and not (df_filtered.empty):
-               df_filtered, df_dropped = self.conditional_filter(df_filtered, df_dropped, del_col)
+         ## Cutoff 4: Average Deletions (BS)
+         avg_del_bs = "AvgDeletionCt_BS"
+         del_col_bs = [col for col in df_filtered.columns 
+                       if re.search(r"_Deletions_BS$*", col)]
+         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped, 
+                                                       avg_del_bs, del_col_bs)
 
-         ## Cutoff 5: Conditional mean (DeletionRate)
-         """
-         NOTES:
-         * dr_col_bs = Column for corresponding DeletionRate_BS
-         * dr_mean_bs = Mean of corresponding dr_col_bs
-         """
-         for rep in rep_list:
-            dr_col_bs = f"{rep}_DeletionRate_BS"
-            dr_mean_bs = df_filtered[dr_col_bs].mean()
-            while (dr_mean_bs <= 0.02) and not (df_filtered.empty):
-               self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
+         ## Cutoff 5: Average DeletionRate (BS)
+         avg_dr_bs = "AvgDeletionRate_BS"
+         dr_col_bs = [col for col in df_filtered.columns 
+                      if re.search(r"_DeletionRate_BS$*", col)]
+         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped,
+                                                       avg_dr_bs, dr_col_bs)
 
-         ## Cutoff 6: Average DeletionRate is 2x higher in BS rep compared to NBS rep
-         for rep in rep_list:
-            dr_col_nbs = f"{rep}_DeletionRate_NBS"
-            dr_mean_nbs = df_filtered[dr_col_nbs].mean()
-            while (dr_mean_bs < 2 * dr_mean_nbs):
-               self.conditional_filter(df_filtered, df_dropped, dr_col_bs)
+         ## Cutoff 6: Average DeletionRate is 2x higher in BS compared to NBS
+         avg_dr_nbs = "AvgDeletionRate_NBS"
+         dr_col_nbs = [col for col in df_filtered.columns 
+                       if re.search(r"_DeletionRate_NBS$*", col)]
+         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped,
+                                                       avg_dr_nbs, dr_col_nbs)
+         
+         cutoff6 = df_filtered[avg_dr_bs] >= 2 * df_filtered[avg_dr_nbs]
+         df_filtered = df_filtered[cutoff6]
+         df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff6]])
 
          print("Successfully applied cutoffs.")
 
