@@ -77,7 +77,7 @@ class FilterTSV:
          traceback.print_exc()
          raise
 
-   def average_filter(self, df_filtered, df_dropped, colname, cols):
+   def filter_means(self, df_filtered, df_dropped, colname, cols):
       """
       PURPOSE:
       * Use to filter by average (Cutoffs #4-6)
@@ -146,21 +146,21 @@ class FilterTSV:
          avg_del_bs = "AvgDeletionCt_BS"
          del_col_bs = [col for col in df_filtered.columns 
                        if re.search(r"_Deletions_BS$*", col)]
-         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped, 
+         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped, 
                                                        avg_del_bs, del_col_bs)
 
          ## Cutoff 5: Average DeletionRate (BS)
          avg_dr_bs = "AvgDeletionRate_BS"
          dr_col_bs = [col for col in df_filtered.columns 
                       if re.search(r"_DeletionRate_BS$*", col)]
-         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped,
+         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped,
                                                        avg_dr_bs, dr_col_bs)
 
          ## Cutoff 6: Average DeletionRate is 2x higher in BS compared to NBS
          avg_dr_nbs = "AvgDeletionRate_NBS"
          dr_col_nbs = [col for col in df_filtered.columns 
                        if re.search(r"_DeletionRate_NBS$*", col)]
-         df_filtered, df_dropped = self.average_filter(df_filtered, df_dropped,
+         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped,
                                                        avg_dr_nbs, dr_col_nbs)
          
          cutoff6 = df_filtered[avg_dr_bs] >= 2 * df_filtered[avg_dr_nbs]
@@ -266,16 +266,12 @@ def main():
 
             ## Run Fisher's Exact Test (p-values)
             filtertsv.merged_output(df_merged, rep_list, pattern_dict)
-
-            ## Sort by DeletionRate and keep first 50 rows
-            df_merged.head(50).to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_filtered.tsv", 
-                               sep = "\t", index = False)
             
-            ## Drop intermediate columns for priority .tsv
-            drop_cols = [col for col in df_final.columns if re.search(fr"Rep(\d+)")]
-            df_priority = df_final.drop(columns = drop_cols)
-            df_priority.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_priority.tsv",
-                               sep = "\t", index = False)
+            # ## Drop intermediate columns for priority .tsv
+            # drop_cols = [col for col in df_final.columns if re.search(fr"Rep(\d+)")]
+            # df_priority = df_final.drop(columns = drop_cols)
+            # df_priority.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_priority.tsv",
+            #                    sep = "\t", index = False)
 
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
