@@ -110,7 +110,7 @@ def make_key(subfolder, base_key):
     
     return prefix + base_key + suffix
 
-def match_regex(folder_name):
+def get_sample_group(folder_name):
     """
     PURPOSE:
     Given input folder names, extract the group name
@@ -134,7 +134,7 @@ def main(folder_name):
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
-    group_name = match_regex(folder_name)
+    group_name = get_sample_group(folder_name)
     
     left = pd.read_csv(Path("~/umms-RNAlabDATA/Software/B-PsiD_tools"
                             "/UNUAR_motif_sites_mRNA_hg38p14.tsv").expanduser(), sep = "\t")

@@ -110,7 +110,7 @@ def make_key(subfolder, base_key):
     
     return prefix + base_key + suffix
 
-def match_regex(folder_name):
+def get_sample_group(folder_name):
     """
     PURPOSE:
     Given input folder names, extract the group name
@@ -127,6 +127,28 @@ def match_regex(folder_name):
         raise
     return match.group(1)
 
+def average_filter(df, colname, cols):
+    """
+    PURPOSE:
+    * Use to filter by average (Cutoffs #4-5)
+    """
+    ## Calculate average and standard deviation
+    df[colname] = df[cols].mean(axis = 1)      
+    std_colname = colname.replace("Avg", "Std")
+    df[std_colname] = df[cols].std(axis = 1)
+
+    ## Sort by descending DeletionRate
+    df = df.sort_values(by = colname, ascending = False)
+
+    ## If BS, apply filters to average columns
+    if "_BS" in colname:
+        if "DeletionCt" in colname:
+            df[colname] = df[colname].ge(5)
+        elif "DeletionRate" in colname:
+            df[colname] = df[colname].ge(0.02)
+
+    return df
+
 def main(folder_name):
     """
     PURPOSE: 
@@ -134,7 +156,7 @@ def main(folder_name):
     """
     current_path = Path.cwd()
     input_dir = current_path/"realignments"/folder_name
-    group_name = match_regex(folder_name)
+    group_name = get_sample_group(folder_name)
     
     left = pd.read_csv(Path("~/umms-RNAlabDATA/Software/B-PsiD_tools"
                             "/UNUAR_motif_sites_mRNA_hg38p14.tsv").expanduser(), sep = "\t")
@@ -175,7 +197,7 @@ def main(folder_name):
                     denom = (df_draft["fit_c"] * (df_draft["fit_b"] + df_draft["fit_s"] -
                              df_draft["fit_s"] * df_draft["DeletionRate"] - 1))
                     df_draft["RealRate"] = num/denom
-                    df_final = df_draft.rename(columns = {"A": key["A"], 
+                    df_draft = df_draft.rename(columns = {"A": key["A"], 
                                                           "C": key["C"], 
                                                           "G": key["G"], 
                                                           "T": key["T"], 
@@ -193,6 +215,15 @@ def main(folder_name):
                     * BS files must have DeletionRate values of <= 0.1
                     """
                     dr_pattern = key["DeletionRate"]
+                    rr_pattern = key["RealRate"]
+                    
+                    ## Keep only RealRate >= 0.3
+                    df_final = df_draft[df_draft[rr_pattern].ge(0.3)]
+
+                    ## Keep only rows where coverage >= 20
+                    coverage_list = [col for col in df_final.columns 
+                                 if re.match("(A|C|G|T|Deletions)_.*", col)]
+                    df_final["TotalCoverage"] = df_final[coverage_list].sum(axis = 1).ge(20)
 
                     ## Only output files if WT or 7KO
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
@@ -207,7 +238,7 @@ def main(folder_name):
                                 df_final = df_final[df_final[dr_pattern].le(0.1)]
 
                         ## Save as .tsv output
-                        df_final.to_csv(output_tsv_name, sep = "\t", index = False)
+                        df_final.dropna().head(50).to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
         print("Failed to calculate observed & real deletion rates in "
