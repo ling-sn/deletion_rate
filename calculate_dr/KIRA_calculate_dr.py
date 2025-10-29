@@ -220,7 +220,7 @@ def main(folder_name):
                                 df_final = kept_cov[kept_cov[dr_pattern].le(0.1)]
 
                         ## Save as .tsv output
-                        df_final.dropna().head(50).to_csv(output_tsv_name, sep = "\t", index = False)
+                        df_final.head(50).to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
         print("Failed to calculate observed & real deletion rates in "
