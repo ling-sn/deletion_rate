@@ -74,15 +74,12 @@ class FilterTSV:
               -> Use these arrays for numpy batch processing
             * Run Fisher's Exact Test (scipy) on each table, then select second result
               of test AKA the p-val using 'fisher_exact(table)[1]'
-            * Keep rows where Pvalue <= 0.0001
             """
             if set(fisher_cols).issubset(df_merged.columns):
                df_merged = df_merged.dropna(subset = fisher_cols)
                arr = df_merged[fisher_cols].values.reshape(-1, 2, 2) 
                pvals = [fisher_exact(table)[1] for table in arr]
                df_merged[f"{rep}_Pvalue"] = pvals
-
-            df_merged = df_merged[df_merged[f"{rep}_Pvalue"]].le(0.0001)
          return df_merged
       except Exception as e:
          print(f"Failed to calculate p-value for {rep}: {e}")
@@ -93,12 +90,15 @@ class FilterTSV:
       """
       PURPOSE:
       * Use to filter by average (Cutoffs #4-6)
-      * Calculate standard deviation from average calculation
       """
-      df_filtered[colname] = df_filtered[cols].mean(axis = 1)
-      
+      ## Calculate average and standard deviation
+      df_filtered[colname] = df_filtered[cols].mean(axis = 1)      
       std_colname = colname.replace("Avg", "Std")
       df_filtered[std_colname] = df_filtered[cols].std(axis = 1)
+
+      ## Sort by descending DeletionRate
+      df_filtered = df_filtered.sort_values(by = colname, 
+                                            ascending = False)
 
       ## If BS, apply filters to average columns
       if "_BS" in colname:
@@ -261,9 +261,8 @@ def main():
             ## Save merged .tsv (all_sites)
             """
             NOTES:
-            * Drop nulls because p-val calculations don't work otherwise 
-            * Use merged_output() class function to add p-val column
-            - 
+            * Drop nulls to ensure deletion rates for all 3 replicates
+            * Calculate p-vals with Fisher's Exact Test (merged_output)
             """
             df_merged = df_full.dropna()
             filtertsv.merged_output(df_merged, merged_colnames, rep_list)
@@ -277,7 +276,7 @@ def main():
 
             ## Save filtered out rows in .tsv (non_pass & non_sites)
             # (a) Rows that failed cutoffs (non_pass)
-            cutoff7 = df_dropped["Deletions"!=0]
+            cutoff7 = df_dropped["Deletions" != 0]
             df_failcut = df_dropped[cutoff7]
             df_failcut.to_csv(f"{processed_folder}/cleaned_tsv/{subfolder.name}_non_pass.tsv", 
                               sep = "\t", index = False)
