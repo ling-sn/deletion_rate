@@ -8,6 +8,8 @@ import pysam
 import concurrent.futures
 import re
 
+pd.options.mode.chained_assignment = None  # default = "warn"
+
 def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     """
     PURPOSE:
@@ -127,28 +129,6 @@ def get_sample_group(folder_name):
         raise
     return match.group(1)
 
-def average_filter(df, colname, cols):
-    """
-    PURPOSE:
-    * Use to filter by average (Cutoffs #4-5)
-    """
-    ## Calculate average and standard deviation
-    df[colname] = df[cols].mean(axis = 1)      
-    std_colname = colname.replace("Avg", "Std")
-    df[std_colname] = df[cols].std(axis = 1)
-
-    ## Sort by descending DeletionRate
-    df = df.sort_values(by = colname, ascending = False)
-
-    ## If BS, apply filters to average columns
-    if "_BS" in colname:
-        if "DeletionCt" in colname:
-            df[colname] = df[colname].ge(5)
-        elif "DeletionRate" in colname:
-            df[colname] = df[colname].ge(0.02)
-
-    return df
-
 def main(folder_name):
     """
     PURPOSE: 
@@ -218,24 +198,25 @@ def main(folder_name):
                     rr_pattern = key["RealRate"]
                     
                     ## Keep only RealRate >= 0.3
-                    df_final = df_draft[df_draft[rr_pattern].ge(0.3)]
+                    kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
 
                     ## Keep only rows where coverage >= 20
-                    coverage_list = [col for col in df_final.columns 
-                                 if re.match("(A|C|G|T|Deletions)_.*", col)]
-                    df_final["TotalCoverage"] = df_final[coverage_list].sum(axis = 1).ge(20)
+                    coverage_list = [col for col in kept_rr.columns 
+                                     if re.search("(A|C|G|T|Deletions)_.*", col)]
+                    kept_rr["TotalCoverage"] = kept_rr[coverage_list].sum(axis = 1)
+                    kept_cov = kept_rr[kept_rr["TotalCoverage"].ge(20)]
 
                     ## Only output files if WT or 7KO
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
                         if re.match(fr"WT.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[df_final[dr_pattern].ge(0.8)]
+                                df_final = kept_cov[kept_cov[dr_pattern].ge(0.8)]
                             else: 
-                                df_final = df_final[df_final[dr_pattern].le(0.1)]
+                                df_final = kept_cov[kept_cov[dr_pattern].le(0.1)]
 
                         if re.match(fr"7KO.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[df_final[dr_pattern].le(0.1)]
+                                df_final = kept_cov[kept_cov[dr_pattern].le(0.1)]
 
                         ## Save as .tsv output
                         df_final.dropna().head(50).to_csv(output_tsv_name, sep = "\t", index = False)

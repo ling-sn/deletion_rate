@@ -8,6 +8,8 @@ import pysam
 import concurrent.futures
 import re
 
+pd.options.mode.chained_assignment = None  # default = "warn"
+
 def pysam_pileup(bamfile, chrom, mod_base, base_ct):
     """
     PURPOSE:
