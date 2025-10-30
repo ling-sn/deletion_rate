@@ -219,7 +219,8 @@ def main(folder_name):
                             if "_BS" in dr_pattern:
                                 df_final = kept_cov[kept_cov[dr_pattern].le(0.1)]
 
-                        ## Save as .tsv output
+                    ## Save as .tsv output
+                    if not df_final.empty:
                         df_final = df_final.sort_values(by = dr_pattern, ascending = False)
                         df_final.head(50).to_csv(output_tsv_name, sep = "\t", index = False)
 
