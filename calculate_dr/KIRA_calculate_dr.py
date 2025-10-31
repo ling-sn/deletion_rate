@@ -219,9 +219,9 @@ def main(folder_name):
                             if "_BS" in dr_pattern:
                                 df_final = df_final[df_final[dr_pattern].le(0.1)]
 
-                    ## Save as .tsv output
-                    df_final = df_final.sort_values(by = dr_pattern, ascending = False)
-                    df_final.head(50).to_csv(output_tsv_name, sep = "\t", index = False)
+                        ## Save as .tsv output
+                        df_final = df_final.sort_values(by = dr_pattern, ascending = False)
+                        df_final.head(50).to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
         print("Failed to calculate observed & real deletion rates in "
