@@ -77,7 +77,7 @@ class FilterTSV:
          traceback.print_exc()
          raise
 
-   def filter_means(self, df_filtered, df_dropped, colname, cols):
+   def filter_means(self, df_filtered, colname, cols):
       """
       PURPOSE:
       * Use to filter by average (Cutoffs #4-6)
@@ -97,9 +97,8 @@ class FilterTSV:
             df_filtered[colname] = df_filtered[colname].ge(5)
          elif "DeletionRate" in colname:
             df_filtered[colname] = df_filtered[colname].ge(0.02)
-         df_dropped = pd.concat([df_dropped, df_filtered.loc[~df_filtered[colname]]])
 
-      return df_filtered, df_dropped
+      return df_filtered
 
    def filtered_output(self, df_merged, rep_list):
       """
@@ -119,18 +118,12 @@ class FilterTSV:
                       if re.search(r"Pvalue$", col)]
          cutoff1 = df_merged[pval_list].le(0.0001).all(axis=1)
          df_filtered = df_merged.loc[cutoff1]
-         df_dropped = df_merged.loc[~cutoff1]
 
          ## Cutoff 2: RealRate
-         """
-         NOTES
-         * Append dropped rows to existing df
-         """
          realrate_list = [col for col in df_filtered.columns 
                           if re.search(r"RealRate", col)]
          cutoff2 = df_filtered[realrate_list].ge(0.3).all(axis=1)
          df_filtered = df_filtered.loc[cutoff2]
-         df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff2]])
 
          ## Cutoff 3: Total sequencing coverage
          for rep in rep_list:
@@ -140,36 +133,31 @@ class FilterTSV:
                total_sum = df_filtered[coverage_list].sum(axis = 1)
                cutoff3 = total_sum.ge(20)
                df_filtered = df_filtered.loc[cutoff3]
-               df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff3]])
 
          ## Cutoff 4: Average Deletions (BS)
          avg_del_bs = "AvgDeletionCt_BS"
          del_col_bs = [col for col in df_filtered.columns 
                        if re.search(r"_Deletions_BS$*", col)]
-         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped, 
-                                                       avg_del_bs, del_col_bs)
+         df_filtered = self.filter_means(df_filtered, avg_del_bs, del_col_bs)
 
          ## Cutoff 5: Average DeletionRate (BS)
          avg_dr_bs = "AvgDeletionRate_BS"
          dr_col_bs = [col for col in df_filtered.columns 
                       if re.search(r"_DeletionRate_BS$*", col)]
-         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped,
-                                                       avg_dr_bs, dr_col_bs)
+         df_filtered = self.filter_means(df_filtered, avg_dr_bs, dr_col_bs)
 
          ## Cutoff 6: Average DeletionRate is 2x higher in BS compared to NBS
          avg_dr_nbs = "AvgDeletionRate_NBS"
          dr_col_nbs = [col for col in df_filtered.columns 
                        if re.search(r"_DeletionRate_NBS$*", col)]
-         df_filtered, df_dropped = self.filter_means(df_filtered, df_dropped,
-                                                       avg_dr_nbs, dr_col_nbs)
+         df_filtered = self.filter_means(df_filtered, avg_dr_nbs, dr_col_nbs)
          
          cutoff6 = df_filtered[avg_dr_bs] >= 2 * df_filtered[avg_dr_nbs]
          df_filtered = df_filtered[cutoff6]
-         df_dropped = pd.concat([df_dropped, df_filtered.loc[~cutoff6]])
 
          print("Successfully applied cutoffs.")
 
-         return df_filtered, df_dropped
+         return df_filtered
       
       except Exception as e:
          print(f"Failed to apply cutoffs from BID-Pipe protocol: {e}")
@@ -204,7 +192,7 @@ def main():
 
             ## Merge pandas dataframes
             """
-            PART I: Create initial df_full & df_dropped w/ df1
+            PART I: Create initial df_full w/ df1
             * df_list[0] = df1
             * Select out column names that are always the same throughout all dfs
             * Use create_mask() to drop null rows & rows where "Deletions" == 0
