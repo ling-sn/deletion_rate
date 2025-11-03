@@ -46,7 +46,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
         traceback.print_exc()
         raise
 
-def count_base(chunk, input_bam_name, results):
+def count_base(input_bam_name, results):
     bamfile = pysam.AlignmentFile(input_bam_name, "rb")
     """
     PURPOSE:
@@ -58,7 +58,7 @@ def count_base(chunk, input_bam_name, results):
     * **base_ct: Unpacks base_ct dict
     """
     try:
-        for row in chunk:
+        for row in genome_coord:
             chrom = row[0]
             mod_base = row[1]
             base_ct = {"A": 0, "C": 0, "G": 0, "T": 0, "Deletions": 0}
@@ -74,18 +74,18 @@ def count_base(chunk, input_bam_name, results):
         traceback.print_exc()
         raise
 
-def process_chunk(genome_coord, input_bam_name, results):
-    try:
-        all_chunks = np.array_split(genome_coord, 100)
-        with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
-            futures = [executor.submit(count_base, chunk, input_bam_name, results) 
-                       for chunk in all_chunks]
-            for future in concurrent.futures.as_completed(futures):
-                future.result()
-    except Exception as e:
-        print(f"Failed to parallelize chunks: {e}")
-        traceback.print_exc()
-        raise
+# def process_chunk(genome_coord, input_bam_name, results):
+#     try:
+#         all_chunks = np.array_split(genome_coord, 100)
+#         with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
+#             futures = [executor.submit(count_base, chunk, input_bam_name, results) 
+#                        for chunk in all_chunks]
+#             for future in concurrent.futures.as_completed(futures):
+#                 future.result()
+#     except Exception as e:
+#         print(f"Failed to parallelize chunks: {e}")
+#         traceback.print_exc()
+#         raise
 
 def make_key(subfolder, base_key):
     """
@@ -164,7 +164,7 @@ def main(folder_name):
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
                     ## Count A, C, G, T and deletions @ each UNUAR site
-                    process_chunk(genome_coord, input_bam_name, results)
+                    count_base(input_bam_name, results)
 
                     ## Calculate observed deletion rates
                     counts = pd.DataFrame(results)
@@ -221,7 +221,7 @@ def main(folder_name):
 
                         ## Save as .tsv output
                         df_final = df_final.sort_values(by = dr_pattern, ascending = False)
-                        df_final.head(50).to_csv(output_tsv_name, sep = "\t", index = False)
+                        df_final.tail(50).to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
         print("Failed to calculate observed & real deletion rates in "
