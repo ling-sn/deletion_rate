@@ -132,6 +132,7 @@ def main(folder_name):
                                "/Zhang_HE_NatureProtocols_2023_SupplementaryTable1.xlsx").expanduser())
 
     df = pd.merge(left, right, how = "left", on = "Motif")
+    df = df[df["Region"] == "3UTR"]
     genome_coord = df[["Chrom", "GenomicModBase"]].to_numpy()
     
     try: 
