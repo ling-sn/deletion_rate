@@ -46,7 +46,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
         traceback.print_exc()
         raise
 
-def count_base(input_bam_name, results):
+def count_base(genome_coord, input_bam_name, results):
     bamfile = pysam.AlignmentFile(input_bam_name, "rb")
     """
     PURPOSE:
@@ -73,19 +73,6 @@ def count_base(input_bam_name, results):
         print(f"Failed to count bases/deletions in UNUAR sites: {e}")
         traceback.print_exc()
         raise
-
-# def process_chunk(genome_coord, input_bam_name, results):
-#     try:
-#         all_chunks = np.array_split(genome_coord, 100)
-#         with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
-#             futures = [executor.submit(count_base, chunk, input_bam_name, results) 
-#                        for chunk in all_chunks]
-#             for future in concurrent.futures.as_completed(futures):
-#                 future.result()
-#     except Exception as e:
-#         print(f"Failed to parallelize chunks: {e}")
-#         traceback.print_exc()
-#         raise
 
 def make_key(subfolder, base_key):
     """
@@ -164,7 +151,7 @@ def main(folder_name):
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
                     ## Count A, C, G, T and deletions @ each UNUAR site
-                    count_base(input_bam_name, results)
+                    count_base(genome_coord, input_bam_name, results)
 
                     ## Calculate observed deletion rates
                     counts = pd.DataFrame(results)
@@ -220,8 +207,8 @@ def main(folder_name):
                                 df_final = df_final[df_final[dr_pattern].le(0.1)]
 
                         ## Save as .tsv output
-                        df_final = df_final.sort_values(by = dr_pattern, ascending = False)
-                        df_final.tail(50).to_csv(output_tsv_name, sep = "\t", index = False)
+                        df_final = df_final.drop_duplicates().sort_values(by = dr_pattern, ascending = False)
+                        df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
         print("Failed to calculate observed & real deletion rates in "
