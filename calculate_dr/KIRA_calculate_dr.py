@@ -5,7 +5,6 @@ import argparse
 import pandas as pd
 import numpy as np
 import pysam
-import concurrent.futures
 import re
 
 ## Disable .loc indexing warning
