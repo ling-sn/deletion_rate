@@ -5,7 +5,6 @@ import argparse
 import pandas as pd
 import numpy as np
 import pysam
-import concurrent.futures
 import re
 
 ## Disable .loc indexing warning
@@ -46,7 +45,7 @@ def pysam_pileup(bamfile, chrom, mod_base, base_ct):
         traceback.print_exc()
         raise
 
-def count_base(chunk, input_bam_name, results):
+def count_base(genome_coord, input_bam_name, results):
     bamfile = pysam.AlignmentFile(input_bam_name, "rb")
     """
     PURPOSE:
@@ -58,7 +57,7 @@ def count_base(chunk, input_bam_name, results):
     * **base_ct: Unpacks base_ct dict
     """
     try:
-        for row in chunk:
+        for row in genome_coord:
             chrom = row[0]
             mod_base = row[1]
             base_ct = {"A": 0, "C": 0, "G": 0, "T": 0, "Deletions": 0}
@@ -71,19 +70,6 @@ def count_base(chunk, input_bam_name, results):
         bamfile.close()
     except Exception as e:
         print(f"Failed to count bases/deletions in UNUAR sites: {e}")
-        traceback.print_exc()
-        raise
-
-def process_chunk(genome_coord, input_bam_name, results):
-    try:
-        all_chunks = np.array_split(genome_coord, 100)
-        with concurrent.futures.ThreadPoolExecutor(max_workers = 12) as executor:
-            futures = [executor.submit(count_base, chunk, input_bam_name, results) 
-                       for chunk in all_chunks]
-            for future in concurrent.futures.as_completed(futures):
-                future.result()
-    except Exception as e:
-        print(f"Failed to parallelize chunks: {e}")
         traceback.print_exc()
         raise
 
@@ -145,6 +131,7 @@ def main(folder_name):
                                "/Zhang_HE_NatureProtocols_2023_SupplementaryTable1.xlsx").expanduser())
 
     df = pd.merge(left, right, how = "left", on = "Motif")
+    df = df[df["Region"] == "3UTR"]
     genome_coord = df[["Chrom", "GenomicModBase"]].to_numpy()
     
     try: 
@@ -164,7 +151,7 @@ def main(folder_name):
                     output_tsv_name = processed_folder/f"{input_bam_name.stem}.tsv"
                     
                     ## Count A, C, G, T and deletions @ each UNUAR site
-                    process_chunk(genome_coord, input_bam_name, results)
+                    count_base(genome_coord, input_bam_name, results)
 
                     ## Calculate observed deletion rates
                     counts = pd.DataFrame(results)
@@ -178,15 +165,31 @@ def main(folder_name):
                     denom = (df_draft["fit_c"] * (df_draft["fit_b"] + df_draft["fit_s"] -
                              df_draft["fit_s"] * df_draft["DeletionRate"] - 1))
                     df_draft["RealRate"] = num/denom
-                    df_final = df_draft.rename(columns = {"A": key["A"], 
+                    df_draft = df_draft.rename(columns = {"A": key["A"], 
                                                           "C": key["C"], 
                                                           "G": key["G"], 
                                                           "T": key["T"], 
                                                           "Deletions": key["Deletions"], 
                                                           "DeletionRate": key["DeletionRate"], 
                                                           "RealRate": key["RealRate"]})
+
+                    """ 
+                    Apply preliminary filtering
+                    * RealRate >= 0.3
+                    * Coverage >= 20
+                    """
+                    dr_pattern = key["DeletionRate"]
+                    rr_pattern = key["RealRate"]
+
+                    kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
+                    coverage_list = [col for col in kept_rr.columns 
+                                     if re.search("(A|C|G|T|Deletions)_.*", col)]
                     
+                    kept_rr["TotalCoverage"] = kept_rr[coverage_list].sum(axis = 1)
+                    df_final = kept_rr[kept_rr["TotalCoverage"].ge(20)]
+
                     ## Save as .tsv output
+                    df_final = df_final.drop_duplicates().sort_values(by = dr_pattern, ascending = False)
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
     except Exception as e:
