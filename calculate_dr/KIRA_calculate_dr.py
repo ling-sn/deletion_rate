@@ -173,16 +173,6 @@ def main(folder_name):
                                      if re.search("(A|C|G|T|Deletions)_.*", col)]
                     df_draft["TotalCoverage"] = df_draft[coverage_list].sum(axis = 1)
 
-                    ## Rename columns
-                    df_draft = df_draft.rename(columns = {"A": key["A"], 
-                                                          "C": key["C"], 
-                                                          "G": key["G"], 
-                                                          "T": key["T"], 
-                                                          "Deletions": key["Deletions"], 
-                                                          "DeletionRate": key["DeletionRate"], 
-                                                          "RealRate": key["RealRate"],
-                                                          "TotalCoverage": key["TotalCoverage"]})
-
                     ## Apply filter conditions based on filename
                     """
                     WT:
@@ -192,17 +182,24 @@ def main(folder_name):
                     Mutation (PUS7KO):
                     * BS files must have DeletionRate values of <= 0.1
                     """
-                    dr_pattern = key["DeletionRate"]
-                    rr_pattern = key["RealRate"]
-                    cov_pattern = key["TotalCoverage"]
-                    
                     ## Keep only RealRate >= 0.3
-                    kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
+                    kept_rr = df_draft[df_draft["RealRate"].ge(0.3)]
 
                     ## Keep only rows where coverage >= 20
-                    df_final = kept_rr[kept_rr[cov_pattern].ge(20)]
+                    df_final = kept_rr[kept_rr["TotalCoverage"].ge(20)]
+
+                    ## Rename columns
+                    df_final = df_final.rename(columns = {"A": key["A"], 
+                                                          "C": key["C"], 
+                                                          "G": key["G"], 
+                                                          "T": key["T"], 
+                                                          "Deletions": key["Deletions"], 
+                                                          "DeletionRate": key["DeletionRate"], 
+                                                          "RealRate": key["RealRate"],
+                                                          "TotalCoverage": key["TotalCoverage"]})
 
                     ## Only output files if WT or 7KO
+                    dr_pattern = key["DeletionRate"]
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
                         if re.match(fr"WT.*", str(folder_name)):
                             if "_BS" in dr_pattern:

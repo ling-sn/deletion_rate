@@ -173,33 +173,31 @@ def main(folder_name):
                                      if re.search("(A|C|G|T|Deletions)_.*", col)]
                     df_draft["TotalCoverage"] = df_draft[coverage_list].sum(axis = 1)
 
-                    ## Rename columns
-                    df_draft = df_draft.rename(columns = {"A": key["A"], 
-                                                          "C": key["C"], 
-                                                          "G": key["G"], 
-                                                          "T": key["T"], 
-                                                          "Deletions": key["Deletions"], 
-                                                          "DeletionRate": key["DeletionRate"], 
-                                                          "RealRate": key["RealRate"]})
-
                     """ 
                     Apply preliminary filtering
                     * RealRate >= 0.3
                     * Coverage >= 20
                     """
-                    dr_pattern = key["DeletionRate"]
-                    rr_pattern = key["RealRate"]
-                    cov_pattern = key["TotalCoverage"]
-
                     ## Keep only RealRate >= 0.3
-                    kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
+                    kept_rr = df_draft[df_draft["RealRate"].ge(0.3)]
 
                     ## Keep only rows where coverage >= 20
                     coverage_list = [col for col in kept_rr.columns 
                                      if re.search("(A|C|G|T|Deletions)_.*", col)]
-                    df_final = kept_rr[kept_rr[cov_pattern].ge(20)]
+                    df_final = kept_rr[kept_rr["TotalCoverage"].ge(20)]
+
+                    ## Rename columns
+                    df_final = df_final.rename(columns = {"A": key["A"], 
+                                                          "C": key["C"], 
+                                                          "G": key["G"], 
+                                                          "T": key["T"], 
+                                                          "Deletions": key["Deletions"], 
+                                                          "DeletionRate": key["DeletionRate"], 
+                                                          "RealRate": key["RealRate"],
+                                                          "TotalCoverage": key["TotalCoverage"]})
 
                     ## Save as .tsv output
+                    dr_pattern = key["DeletionRate"]
                     df_final = df_final.drop_duplicates().sort_values(by = dr_pattern, ascending = False)
                     df_final.to_csv(output_tsv_name, sep = "\t", index = False)
 
