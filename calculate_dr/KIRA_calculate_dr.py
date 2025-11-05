@@ -198,7 +198,7 @@ def main(folder_name):
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
                         if re.match(fr"WT.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[df_final[dr_pattern].ge(0.9)]
+                                df_final = df_final[df_final[dr_pattern].ge(0.8)]
                             else: 
                                 df_final = df_final[df_final[dr_pattern].le(0.1)]
 
