@@ -190,12 +190,14 @@ def main(folder_name):
                     dr_pattern = key["DeletionRate"]
                     rr_pattern = key["RealRate"]
                     cov_pattern = key["TotalCoverage"]
+
+                    ## Keep only RealRate >= 0.3
                     kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
+
+                    ## Keep only rows where coverage >= 20
                     coverage_list = [col for col in kept_rr.columns 
                                      if re.search("(A|C|G|T|Deletions)_.*", col)]
-                    
-                    kept_rr["TotalCoverage"] = kept_rr[coverage_list].sum(axis = 1)
-                    df_final = kept_rr[kept_rr["TotalCoverage"].ge(20)]
+                    df_final = kept_rr[kept_rr[cov_pattern].ge(20)]
 
                     ## Save as .tsv output
                     df_final = df_final.drop_duplicates().sort_values(by = dr_pattern, ascending = False)
