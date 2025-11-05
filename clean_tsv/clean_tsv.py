@@ -230,12 +230,12 @@ def main():
               looping until you reach the end'
             * Output is df_full, which contains rows from all merged dfs
             """
-            for i in df_list[1:]:
-               colnames = df_list[i].columns.tolist()
-               mask = filtertsv.create_mask(df_list[i], colnames)
-               df_list[i] = df_list[i].loc[mask]
-               df_dropped = pd.concat([df_dropped, df_list[i].loc[~mask]])
-               df_full = pd.merge(df_full, df_list[i], on = selected_colnames, how = "outer")
+            for df in df_list[1:]:
+               colnames = df.columns.tolist()
+               mask = filtertsv.create_mask(df, colnames)
+               df = df.loc[mask]
+               df_dropped = pd.concat([df_dropped, df.loc[~mask]])
+               df_full = pd.merge(df_full, df, on = selected_colnames, how = "outer")
 
             ## Sort column names
             """
