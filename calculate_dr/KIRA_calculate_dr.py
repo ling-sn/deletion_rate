@@ -141,7 +141,9 @@ def main(folder_name):
                 processed_folder.mkdir(exist_ok=True, parents=True)
                 
                 key = {base_key: make_key(subfolder, base_key) for base_key 
-                       in ["A", "C", "G", "T", "Deletions", "DeletionRate", "RealRate"]}
+                       in ["A", "C", "G", "T", "Deletions", 
+                           "DeletionRate", "RealRate", 
+                           "TotalCoverage"]}
                 
                 for bam in subfolder.glob("*.bam"):
                     results = []
@@ -165,13 +167,21 @@ def main(folder_name):
                     denom = (df_draft["fit_c"] * (df_draft["fit_b"] + df_draft["fit_s"] -
                              df_draft["fit_s"] * df_draft["DeletionRate"] - 1))
                     df_draft["RealRate"] = num/denom
+
+                    ## Calculate total coverage
+                    coverage_list = [col for col in df_draft.columns 
+                                     if re.search("(A|C|G|T|Deletions)_.*", col)]
+                    df_draft["TotalCoverage"] = df_draft[coverage_list].sum(axis = 1)
+
+                    ## Rename columns
                     df_draft = df_draft.rename(columns = {"A": key["A"], 
                                                           "C": key["C"], 
                                                           "G": key["G"], 
                                                           "T": key["T"], 
                                                           "Deletions": key["Deletions"], 
                                                           "DeletionRate": key["DeletionRate"], 
-                                                          "RealRate": key["RealRate"]})
+                                                          "RealRate": key["RealRate"],
+                                                          "TotalCoverage": key["TotalCoverage"]})
 
                     ## Apply filter conditions based on filename
                     """
@@ -184,15 +194,13 @@ def main(folder_name):
                     """
                     dr_pattern = key["DeletionRate"]
                     rr_pattern = key["RealRate"]
+                    cov_pattern = key["TotalCoverage"]
                     
                     ## Keep only RealRate >= 0.3
                     kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
 
                     ## Keep only rows where coverage >= 20
-                    coverage_list = [col for col in kept_rr.columns 
-                                     if re.search("(A|C|G|T|Deletions)_.*", col)]
-                    kept_rr["TotalCoverage"] = kept_rr[coverage_list].sum(axis = 1)
-                    df_final = kept_rr[kept_rr["TotalCoverage"].ge(20)]
+                    df_final = kept_rr[kept_rr[cov_pattern].ge(20)]
 
                     ## Only output files if WT or 7KO
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
