@@ -15,8 +15,8 @@ class FilterTSV:
       * Pass column names in list to dataframe to create a mask that drops rows
         where Deletions == 0 and there are nulls
       """
-      del_list = set([col for col in colnames if re.search(r"Deletions", col)])
-      mask = (df[del_list] != 0).all(axis=1) & (~df.isnull().any(axis=1))
+      del_list = list(set([col for col in colnames if re.search(r"Deletions", col)]))
+      mask = ~(df[del_list] == 0).any(axis = 1) & (df.notna().all(axis = 1))
       return mask
 
    def merged_output(self, df_merged, merged_colnames, rep_list):
