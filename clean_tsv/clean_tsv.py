@@ -231,11 +231,12 @@ def main():
             * Output is df_full, which contains rows from all merged dfs
             """
             for df in df_list[1:]:
-               colnames = df.columns.tolist()
-               mask = filtertsv.create_mask(df, colnames)
-               df = df.loc[mask]
-               df_dropped = pd.concat([df_dropped, df.loc[~mask]])
-               df_full = pd.merge(df_full, df, on = selected_colnames, how = "outer")
+               if not df.empty:
+                  colnames = df.columns.tolist()
+                  mask = filtertsv.create_mask(df, colnames)
+                  df = df.loc[mask]
+                  df_dropped = pd.concat([df_dropped, df.loc[~mask]])
+                  df_full = pd.merge(df_full, df, on = selected_colnames, how = "outer")
 
             ## Sort column names
             """
