@@ -199,7 +199,7 @@ def main():
                filtertsv.merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir)
 
    except Exception as e:
-      print(f"Failed to create merged .tsv file: {e}")
+      print(f"Failed to create merged .tsv files: {e}")
       traceback.print_exc()
       raise
     
