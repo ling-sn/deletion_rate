@@ -25,7 +25,7 @@ class FilterTSV:
       2. Put them in list
       3. Read in as pandas dataframes
       """
-      matches = [tsv for tsv in tsv_list if re.search(suffix, tsv)]
+      matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
       df_list = {pd.read_csv(str(file), sep = "\t") for file in matches}
 
       """
@@ -68,7 +68,7 @@ class FilterTSV:
       calc_merged.to_csv(merged_dir, sep = "\t", index = False)
 
    def merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir):
-      matches = [tsv for tsv in merged_reps_tsv if re.search(matching_name, tsv)]
+      matches = [tsv for tsv in merged_reps_tsv if re.search(matching_name, tsv.stem)]
       df_list = {pd.read_csv(str(file), sep = "\t") for file in matches}
 
       """
@@ -107,7 +107,7 @@ class FilterTSV:
       merged.to_csv(merged_dir, sep = "\t", index = False)
 
    def merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir):
-      matches = [tsv for tsv in merged_wt_7ko_tsv if re.search(fraction, tsv)]
+      matches = [tsv for tsv in merged_wt_7ko_tsv if re.search(fraction, tsv.stem)]
       df_list = {pd.read_csv(str(file), sep = "\t") for file in matches}
 
       """
