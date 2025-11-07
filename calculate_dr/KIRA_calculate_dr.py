@@ -188,23 +188,23 @@ def main(folder_name):
                     * BS files must have DeletionRate values of <= 0.1
                     """
                     dr_pattern = key["DeletionRate"]
-                    rr_pattern = key["RealRate"]
+                    # rr_pattern = key["RealRate"]
                     cov_pattern = key["TotalCoverage"]
 
                     ## Keep only RealRate >= 0.3
-                    kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
+                    # kept_rr = df_draft[df_draft[rr_pattern].ge(0.3)]
 
                     ## Keep only rows where coverage >= 20
-                    coverage_list = [col for col in kept_rr.columns 
+                    coverage_list = [col for col in df_draft.columns 
                                      if re.search("(A|C|G|T|Deletions)_.*", col)]
-                    kept_rr[cov_pattern] = kept_rr[coverage_list].sum(axis = 1)
-                    df_final = kept_rr[kept_rr[cov_pattern].ge(20)]
+                    df_draft[cov_pattern] = df_draft[coverage_list].sum(axis = 1)
+                    df_final = df_draft[df_draft[cov_pattern].ge(20)]
 
                     ## Only output files if WT or 7KO
                     if re.match(fr"(WT|7KO).*", str(folder_name)):
                         if re.match(fr"WT.*", str(folder_name)):
                             if "_BS" in dr_pattern:
-                                df_final = df_final[df_final[dr_pattern].ge(0.7)]
+                                df_final = df_final[df_final[dr_pattern].ge(0.6)]
                             else: 
                                 df_final = df_final[df_final[dr_pattern].le(0.1)]
 
