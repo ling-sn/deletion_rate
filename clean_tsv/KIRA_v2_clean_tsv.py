@@ -26,7 +26,7 @@ class FilterTSV:
       3. Read in as pandas dataframes
       """
       matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
-      df_list = {pd.read_csv(str(file), sep = "\t") for file in matches}
+      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
 
       """
       Copy + paste iterative merging code from original clean_tsv
@@ -34,7 +34,7 @@ class FilterTSV:
       """
       df1_colnames = df_list[0].columns.tolist()
       selected_colnames = df1_colnames[0:17]
-      init_mask = self.create_mask(df_list[0]. df1_colnames)
+      init_mask = self.create_mask(df_list[0], df1_colnames)
       merged = df_list[0].loc[init_mask]
 
       for df in df_list[1:]:
@@ -69,7 +69,7 @@ class FilterTSV:
 
    def merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir):
       matches = [tsv for tsv in merged_reps_tsv if re.search(matching_name, tsv.stem)]
-      df_list = {pd.read_csv(str(file), sep = "\t") for file in matches}
+      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
 
       """
       1. Ensure 7KO is merged with WT, so WT columns appear first
@@ -108,7 +108,7 @@ class FilterTSV:
 
    def merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir):
       matches = [tsv for tsv in merged_wt_7ko_tsv if re.search(fraction, tsv.stem)]
-      df_list = {pd.read_csv(str(file), sep = "\t") for file in matches}
+      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
 
       """
       1. Ensure NBS is merged with BS, so BS columns appear first
