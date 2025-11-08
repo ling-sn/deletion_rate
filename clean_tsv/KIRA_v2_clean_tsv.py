@@ -55,17 +55,23 @@ class FilterTSV:
          in merged df
       """
       col_start = subfolder.name.split("-")[0]
-      col_end = suffix.split("-")[0]
+      col_end = suffix.split("-")[1]
       avg_col = col_start + "_AvgDeletionRate_" + col_end
       std_col = col_start + "_StdDeletionRate_" + col_end
 
-      calc_merged = self.calc_avg_sd(merged, avg_col, std_col)
+      calc_merged = self.calc_avg_std(merged, avg_col, std_col)
 
       """
       Save merged dataframe as TSV
       """
       merged_dir = reps_dir/f"{subfolder.name}{suffix}.tsv"
       calc_merged.to_csv(merged_dir, sep = "\t", index = False)
+
+   def calc_avg_std(df, avg_col, std_col):
+      dr_col = [col for col in df.columns if re.search("_DeletionRate_", col)]
+      df[avg_col] = df[dr_col].mean(axis = 1)
+      df[std_col] = df[dr_col].std(axis = 1)
+      return df
 
    def merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir):
       matches = [tsv for tsv in merged_reps_tsv if re.search(matching_name, tsv.stem)]
