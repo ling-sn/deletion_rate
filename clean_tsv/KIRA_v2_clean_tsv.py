@@ -173,6 +173,7 @@ def main():
 
             ## Merge replicates for each sample type
             reps_dir = processed_folder/"merged_reps"
+            reps_dir.mkdir(exist_ok = True, parents = True)
             for suffix in ["-BS", "-NBS"]:
                filtertsv.merge_reps(suffix, tsv_list, subfolder, reps_dir)
 
@@ -188,6 +189,7 @@ def main():
             * 7KO-Nuc-NBS <-> WT-Nuc-NBS = Nuc-NBS
             """
             wt_7ko_dir = processed_folder/"merged_WT_7KO"
+            wt_7ko_dir.mkdir(exist_ok = True, parents = True)
             for matching_name in ["-Cyto-BS", "-Cyto-NBS", "-Nuc-BS", "-Nuc-NBS"]:
                filtertsv.merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir)
             
@@ -201,6 +203,7 @@ def main():
             * Nuc-BS <-> Nuc-NBS = Nuc
             """
             bs_nbs_dir = processed_folder/"final_outputs"
+            bs_nbs_dir.mkdir(exist_ok = True, parents = True)
             for fraction in ["Cyto", "Nuc"]:
                filtertsv.merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir)
 
