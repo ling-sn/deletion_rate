@@ -82,9 +82,9 @@ class FilterTSV:
       2. If either dataframe is not empty, then merge w/ inner join
       3. No need to iteratively merge because there are only 2 files
       """
-      first_cols = df_list[0].columns
+      first_cols = df_list[0].columns.tolist()
 
-      if re.search("WT", first_cols):
+      if any(re.search("WT", col) for col in first_cols):
          df1 = df_list[0]
          df2 = df_list[1]
       else:
@@ -121,9 +121,9 @@ class FilterTSV:
       2. If either dataframe is not empty, then merge w/ inner join
       3. No need to iteratively merge because there are only 2 files
       """
-      first_cols = df_list[0].columns
+      first_cols = df_list[0].columns.tolist()
 
-      if re.search("_BS", first_cols):
+      if any(re.search("_BS", col) for col in first_cols):
          df1 = df_list[0]
          df2 = df_list[1]
       else:
