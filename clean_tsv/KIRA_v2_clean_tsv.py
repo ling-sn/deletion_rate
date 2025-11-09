@@ -162,7 +162,8 @@ def main():
    try: 
       for subfolder in input_dir.iterdir():
          tsv_folder = input_dir/subfolder/"individual_tsv"
-         processed_folder = current_path/"calculations"
+         processed_folder = current_path/"merged"
+         processed_folder.mkdir(exist_ok = True, parents = True)
             
          if subfolder.is_dir():
             ## Collect paths of .tsv files and put in list
