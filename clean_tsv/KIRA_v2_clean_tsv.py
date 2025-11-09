@@ -67,13 +67,13 @@ class FilterTSV:
       merged_dir = reps_dir/f"{subfolder.name}{suffix}.tsv"
       calc_merged.to_csv(merged_dir, sep = "\t", index = False)
 
-   def calc_avg_std(df, avg_col, std_col):
+   def calc_avg_std(self, df, avg_col, std_col):
       dr_col = [col for col in df.columns if re.search("_DeletionRate_", col)]
       df[avg_col] = df[dr_col].mean(axis = 1)
       df[std_col] = df[dr_col].std(axis = 1)
       return df
 
-   def merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir):
+   def merge_WT_7KO(self, matching_name, merged_reps_tsv, wt_7ko_dir):
       matches = [tsv for tsv in merged_reps_tsv if re.search(matching_name, tsv.stem)]
       df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
 
@@ -112,7 +112,7 @@ class FilterTSV:
       merged_dir = wt_7ko_dir/f"{output_name}.tsv"
       merged.to_csv(merged_dir, sep = "\t", index = False)
 
-   def merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir):
+   def merge_BS_NBS(self, fraction, merged_wt_7ko_tsv, bs_nbs_dir):
       matches = [tsv for tsv in merged_wt_7ko_tsv if re.search(fraction, tsv.stem)]
       df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
 
