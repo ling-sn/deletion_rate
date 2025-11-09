@@ -178,35 +178,35 @@ def main():
             for suffix in ["-BS", "-NBS"]:
                filtertsv.merge_reps(suffix, tsv_list, subfolder, reps_dir)
 
-            ## Collect all TSVs in reps_dir
-            merged_reps_tsv = reps_dir.glob("*.tsv")
+      ## Collect all TSVs in reps_dir
+      merged_reps_tsv = reps_dir.glob("*.tsv")
 
-            ## Merge TSV pairs by WT/7KO
-            """
-            Example:
-            * 7KO-Cyto-BS <-> WT-Cyto-BS = Cyto-BS
-            * 7KO-Cyto-NBS <-> WT-Cyto-NBS = Cyto-NBS
-            * 7KO-Nuc-BS <-> WT-Nuc-BS = Nuc-BS
-            * 7KO-Nuc-NBS <-> WT-Nuc-NBS = Nuc-NBS
-            """
-            wt_7ko_dir = processed_folder/"merged_WT_7KO"
-            wt_7ko_dir.mkdir(exist_ok = True, parents = True)
-            for matching_name in ["-Cyto-BS", "-Cyto-NBS", "-Nuc-BS", "-Nuc-NBS"]:
-               filtertsv.merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir)
-            
-            ## Collect all TSVs in wt_7ko_dir
-            merged_wt_7ko_tsv = wt_7ko_dir.glob("*.tsv")
+      ## Merge TSV pairs by WT/7KO
+      """
+      Example:
+      * 7KO-Cyto-BS <-> WT-Cyto-BS = Cyto-BS
+      * 7KO-Cyto-NBS <-> WT-Cyto-NBS = Cyto-NBS
+      * 7KO-Nuc-BS <-> WT-Nuc-BS = Nuc-BS
+      * 7KO-Nuc-NBS <-> WT-Nuc-NBS = Nuc-NBS
+      """
+      wt_7ko_dir = processed_folder/"merged_WT_7KO"
+      wt_7ko_dir.mkdir(exist_ok = True, parents = True)
+      for matching_name in ["-Cyto-BS", "-Cyto-NBS", "-Nuc-BS", "-Nuc-NBS"]:
+         filtertsv.merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir)
+      
+      ## Collect all TSVs in wt_7ko_dir
+      merged_wt_7ko_tsv = wt_7ko_dir.glob("*.tsv")
 
-            ## Merge TSV pairs by BS/NBS
-            """
-            Example: 
-            * Cyto-BS <-> Cyto-NBS = Cyto
-            * Nuc-BS <-> Nuc-NBS = Nuc
-            """
-            bs_nbs_dir = processed_folder/"final_outputs"
-            bs_nbs_dir.mkdir(exist_ok = True, parents = True)
-            for fraction in ["Cyto", "Nuc"]:
-               filtertsv.merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir)
+      ## Merge TSV pairs by BS/NBS
+      """
+      Example: 
+      * Cyto-BS <-> Cyto-NBS = Cyto
+      * Nuc-BS <-> Nuc-NBS = Nuc
+      """
+      bs_nbs_dir = processed_folder/"final_outputs"
+      bs_nbs_dir.mkdir(exist_ok = True, parents = True)
+      for fraction in ["Cyto", "Nuc"]:
+         filtertsv.merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir)
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
