@@ -160,26 +160,26 @@ def main():
    filtertsv = FilterTSV()
 
    try: 
+      processed_folder = current_path/"merged"
+      processed_folder.mkdir(exist_ok = True, parents = True)
+      reps_dir = processed_folder/"merged_reps"
+      reps_dir.mkdir(exist_ok = True, parents = True)
+
       for subfolder in input_dir.iterdir():
          tsv_folder = input_dir/subfolder/"individual_tsv"
-         processed_folder = current_path/"merged"
-         processed_folder.mkdir(exist_ok = True, parents = True)
-            
+
          if subfolder.is_dir():
             ## Collect paths of .tsv files and put in list
             tsv_list = sorted(
                tsv_folder.glob("*.tsv"),
                key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
             ) 
-
             ## Merge replicates for each sample type
-            reps_dir = processed_folder/"merged_reps"
-            reps_dir.mkdir(exist_ok = True, parents = True)
             for suffix in ["-BS", "-NBS"]:
                filtertsv.merge_reps(suffix, tsv_list, subfolder, reps_dir)
 
       ## Collect all TSVs in reps_dir
-      merged_reps_tsv = reps_dir.glob("*.tsv")
+      merged_reps_tsv = list(reps_dir.glob("*.tsv"))
 
       ## Merge TSV pairs by WT/7KO
       """
@@ -195,7 +195,7 @@ def main():
          filtertsv.merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir)
       
       ## Collect all TSVs in wt_7ko_dir
-      merged_wt_7ko_tsv = wt_7ko_dir.glob("*.tsv")
+      merged_wt_7ko_tsv = list(wt_7ko_dir.glob("*.tsv"))
 
       ## Merge TSV pairs by BS/NBS
       """
