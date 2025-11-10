@@ -181,7 +181,7 @@ def main(folder_name):
                     ## Apply filter conditions based on filename
                     """
                     WT:
-                    * BS files must have DeletionRate values of >= 0.8
+                    * BS files must have DeletionRate values of >= 0.6
                     * NBS files must have DeletionRate values of <= 0.1
                     ---
                     Mutation (PUS7KO):
