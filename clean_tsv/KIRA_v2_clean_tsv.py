@@ -93,7 +93,7 @@ class FilterTSV:
       
       selected_colnames = df1[0:17]
 
-      if not df1.empty and df2.empty:
+      if not df1.empty and not df2.empty:
          merged = pd.merge(df1, df2, on = selected_colnames, how = "inner")
       elif df1.empty:
          merged = df2
@@ -132,7 +132,7 @@ class FilterTSV:
       
       selected_colnames = df1[0:17]
 
-      if not df1.empty and df2.empty:
+      if not df1.empty and not df2.empty:
          merged = pd.merge(df1, df2, on = selected_colnames, how = "inner")
       elif df1.empty:
          merged = df2
