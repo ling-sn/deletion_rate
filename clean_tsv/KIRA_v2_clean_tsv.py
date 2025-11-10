@@ -91,8 +91,20 @@ class FilterTSV:
          df1 = df_list[1]
          df2 = df_list[0]
       
+      """
+      Rename differing columns (except Avg & Std) with key
+      """
       selected_colnames = df1[0:17]
+      diff_cols = (df1.columns.difference(selected_colnames, sort = False))[:-2]
 
+      for df, prefix in zip([df1, df2], ["WT_", "7KO_"]):
+         for old_name in diff_cols:
+            new_name = prefix + old_name
+            df.rename(columns = {old_name: new_name}, inplace = True)
+
+      """
+      Merge df1 & df2
+      """
       if not df1.empty and not df2.empty:
          merged = pd.merge(df1, df2, on = selected_colnames, how = "inner")
       elif df1.empty:
