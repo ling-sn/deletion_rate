@@ -92,7 +92,7 @@ class FilterTSV:
          df2 = df_list[0]
       
       """
-      Rename differing columns (except Avg & Std) with key
+      Rename differing columns (except Avg & Std) with prefix
       """
       selected_colnames = df1[0:17]
       diff_cols = (df1.columns.difference(selected_colnames, sort = False))[:-2]
@@ -141,7 +141,7 @@ class FilterTSV:
       else:
          df1 = df_list[1]
          df2 = df_list[0]
-      
+
       selected_colnames = df1[0:17]
 
       if not df1.empty and not df2.empty:
