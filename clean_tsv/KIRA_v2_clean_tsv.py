@@ -58,8 +58,9 @@ class FilterTSV:
       col_end = suffix.split("-")[1]
       avg_col = col_start + "_AvgDeletionRate_" + col_end
       std_col = col_start + "_StdDeletionRate_" + col_end
-
+      
       calc_merged = self.calc_avg_std(merged, avg_col, std_col)
+      calc_merged = calc_merged.drop_duplicates().sort_values(by = avg_col, ascending = False)
 
       """
       Save merged dataframe as TSV
@@ -156,7 +157,10 @@ class FilterTSV:
          e.g., Cyto-BS -> Cyto
       2. Save merged dataframe as TSV
       """
-      output_name = (matches[0].stem).split("-")[0]
+      separator = "-"
+      base = (matches[0].stem).split(separator) ## Obtain ['7KO', 'Cyto', 'BS']
+      output_name = separator.join(item for item in base[:-1]) ## Obtain 7KO-Cyto
+      # output_name = (matches[0].stem).split("-")[0]
       merged_dir = bs_nbs_dir/f"{output_name}.tsv"
       merged.to_csv(merged_dir, sep = "\t", index = False)
 
@@ -206,8 +210,8 @@ def main():
       for matching_name in ["-Cyto-BS", "-Cyto-NBS", "-Nuc-BS", "-Nuc-NBS"]:
          filtertsv.merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir)
       
-      ## Collect all TSVs in wt_7ko_dir
-      merged_wt_7ko_tsv = list(wt_7ko_dir.glob("*.tsv"))
+      # ## Collect all TSVs in wt_7ko_dir
+      # merged_wt_7ko_tsv = list(wt_7ko_dir.glob("*.tsv"))
 
       ## Merge TSV pairs by BS/NBS
       """
@@ -215,10 +219,10 @@ def main():
       * Cyto-BS <-> Cyto-NBS = Cyto
       * Nuc-BS <-> Nuc-NBS = Nuc
       """
-      bs_nbs_dir = processed_folder/"final_outputs"
+      bs_nbs_dir = processed_folder/"merged_BS_NBS"
       bs_nbs_dir.mkdir(exist_ok = True, parents = True)
-      for fraction in ["Cyto", "Nuc"]:
-         filtertsv.merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir)
+      for fraction in ["7KO-Cyto", "7KO-Nuc", "WT-Cyto", "WT-Nuc"]:
+         filtertsv.merge_BS_NBS(fraction, merged_reps_tsv, bs_nbs_dir)
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
