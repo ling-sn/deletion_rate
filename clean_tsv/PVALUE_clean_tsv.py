@@ -7,13 +7,27 @@ import re
 from scipy.stats import fisher_exact
 
 class FilterTSV:
+   def create_mask(self, df, colnames):
+      """
+      NOTES:
+      * Select columns that contain "Deletions" and put them in a list
+      * Use set() to remove duplicates, since sets can only contain unique vals
+      * Pass column names in list to dataframe to create a mask that drops rows
+        where Deletions == 0 and there are nulls
+      """
+      del_list = list(set([col for col in colnames if re.search(r"Deletions", col)]))
+      mask = ~(df[del_list] == 0).any(axis = 1) & (df.notna().all(axis = 1))
+      return mask
+   
    def calc_pval(self, df_merged, merged_colnames, rep_list, subfolder):
       try:
          for rep in rep_list: 
             wt_7ko = subfolder.name.split("-")[0]
             cyto_nuc = subfolder.name.split("-")[1]
-            bs_del_col = re.search(f"{rep}_Deletions_BS", merged_colnames)
-            nbs_del_col = re.search(f"{rep}_Deletions_NBS", merged_colnames)
+            bs_del_col = [col for col in merged_colnames 
+                          if re.search(f"{rep}_Deletions_BS", col)]
+            nbs_del_col = [col for col in merged_colnames 
+                           if re.search(f"{rep}_Deletions_NBS", col)]
 
             ## Group corresponding BS/NBS into separate lists (not modifying original df)
             bs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_BS$")
@@ -26,7 +40,7 @@ class FilterTSV:
             ## Define names of base and deletion BS/NBS columns
             base_cols = [f"{wt_7ko}_{cyto_nuc}_{rep}_TotalBases_BS", 
                          f"{wt_7ko}_{cyto_nuc}_{rep}_TotalBases_NBS"]
-            del_cols = [bs_del_col, nbs_del_col]
+            del_cols = [bs_del_col[0], nbs_del_col[0]]
             
             ## Define generic entries for 2x2 contingency table
             fisher_cols = [base_cols[0], 
@@ -50,18 +64,6 @@ class FilterTSV:
          print(f"Failed to calculate p-value for {rep}: {e}")
          traceback.print_exc()
          raise
-
-   def create_mask(self, df, colnames):
-      """
-      NOTES:
-      * Select columns that contain "Deletions" and put them in a list
-      * Use set() to remove duplicates, since sets can only contain unique vals
-      * Pass column names in list to dataframe to create a mask that drops rows
-        where Deletions == 0 and there are nulls
-      """
-      del_list = list(set([col for col in colnames if re.search(r"Deletions", col)]))
-      mask = ~(df[del_list] == 0).any(axis = 1) & (df.notna().all(axis = 1))
-      return mask
 
 def main():
    """
@@ -109,10 +111,10 @@ def main():
             df_merged = merged.dropna()
             merged_colnames = df_merged.columns.tolist()
             rep_list = sorted(
-               set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames 
-                    if re.search(r"(Rep\d+)", col)]), 
-                   key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))
-            )
+                        set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames 
+                        if re.search(r"(Rep\d+)", col)]), 
+                        key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))
+                       )
             filtertsv.calc_pval(df_merged, merged_colnames, rep_list, subfolder)
 
             ## Filter by p-value
