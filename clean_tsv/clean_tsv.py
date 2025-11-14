@@ -209,7 +209,7 @@ def main():
             ) 
 
             ## Read in TSVs
-            df_list = {pd.read_csv(str(file), sep = "\t") for file in tsv_list}
+            df_list = [pd.read_csv(str(file), sep = "\t") for file in tsv_list]
 
             ## Merge pandas dataframes
             """

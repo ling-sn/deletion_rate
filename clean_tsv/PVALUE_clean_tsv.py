@@ -88,7 +88,7 @@ def main():
             ) 
 
             ## Read in TSVs
-            df_list = {pd.read_csv(str(file), sep = "\t") for file in tsv_list}
+            df_list = [pd.read_csv(str(file), sep = "\t") for file in tsv_list]
 
             ## Iteratively merge dataframes
             df1_colnames = df_list[0].columns.tolist()
