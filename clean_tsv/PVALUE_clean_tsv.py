@@ -19,11 +19,9 @@ class FilterTSV:
       mask = ~(df[del_list] == 0).any(axis = 1) & (df.notna().all(axis = 1))
       return mask
    
-   def calc_pval(self, df_merged, merged_colnames, rep_list, subfolder):
+   def calc_pval(self, df_merged, merged_colnames, rep_list):
       try:
-         for rep in rep_list: 
-            wt_7ko = subfolder.name.split("-")[0]
-            cyto_nuc = subfolder.name.split("-")[1]
+         for rep in rep_list:
             bs_del_col = [col for col in merged_colnames 
                           if re.search(f"{rep}_Deletions_BS", col)]
             nbs_del_col = [col for col in merged_colnames 
@@ -38,8 +36,8 @@ class FilterTSV:
                                                  if nbs_base_pattern.match(col)]}
 
             ## Define names of base and deletion BS/NBS columns
-            base_cols = [f"{wt_7ko}_{cyto_nuc}_{rep}_TotalBases_BS", 
-                         f"{wt_7ko}_{cyto_nuc}_{rep}_TotalBases_NBS"]
+            base_cols = [f"{rep}_TotalBases_BS", 
+                         f"{rep}_TotalBases_NBS"]
             del_cols = [bs_del_col[0], nbs_del_col[0]]
             
             ## Define generic entries for 2x2 contingency table
@@ -96,26 +94,25 @@ def main():
             df1_colnames = df_list[0].columns.tolist()
             selected_colnames = df1_colnames[0:17]
             init_mask = filtertsv.create_mask(df_list[0], df1_colnames)
-            merged = df_list[0].loc[init_mask]
+            df_merged = df_list[0].loc[init_mask]
 
             for df in df_list[1:]:
                if not df.empty:
                   colnames = df.columns.tolist()
                   mask = filtertsv.create_mask(df, colnames)
                   df = df.loc[mask]
-                  merged = pd.merge(merged, df,
+                  df_merged = pd.merge(df_merged, df,
                                     on = selected_colnames,
                                     how = "outer")
 
             ## Calculate p-values in each TSV
-            df_merged = merged.dropna()
             merged_colnames = df_merged.columns.tolist()
             rep_list = sorted(
                         set([re.search(r"(Rep\d+)", col).group(1) for col in merged_colnames 
                         if re.search(r"(Rep\d+)", col)]), 
                         key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))
                        )
-            filtertsv.calc_pval(df_merged, merged_colnames, rep_list, subfolder)
+            filtertsv.calc_pval(df_merged, merged_colnames, rep_list)
 
             ## Filter by p-value
             pval_list = [col for col in df_merged.columns 
