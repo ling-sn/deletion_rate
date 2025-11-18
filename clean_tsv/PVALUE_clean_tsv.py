@@ -27,7 +27,6 @@ class FilterTSV:
             nbs_del_col = [col for col in merged_colnames 
                            if re.search(f"{rep}_Deletions_NBS", col)]
 
-            ## Group corresponding BS/NBS into separate lists (not modifying original df)
             bs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_BS$")
             nbs_base_pattern = re.compile(fr"{rep}_(A|C|G|T)_NBS$")
             pattern_dict = {f"{rep}_Bases_BS": [col for col in merged_colnames 
@@ -35,16 +34,17 @@ class FilterTSV:
                             f"{rep}_Bases_NBS": [col for col in merged_colnames 
                                                  if nbs_base_pattern.match(col)]}
 
-            ## Define names of base and deletion BS/NBS columns
             base_cols = [f"{rep}_TotalBases_BS", 
                          f"{rep}_TotalBases_NBS"]
             del_cols = [bs_del_col[0], nbs_del_col[0]]
-            
-            ## Define generic entries for 2x2 contingency table
+
             fisher_cols = [base_cols[0], 
                            del_cols[0], 
                            base_cols[1], 
                            del_cols[1]]
+            
+            ## Create copy to disable SettingWithCopyWarning
+            df_merged = df_merged.copy()
 
             ## Calculate p-values
             for col, key in zip(base_cols, pattern_dict):
@@ -56,7 +56,7 @@ class FilterTSV:
                arr = df_merged[fisher_cols].values.reshape(-1, 2, 2) 
                pvals = [fisher_exact(table)[1] for table in arr]
                df_merged[f"{rep}_Pvalue"] = pvals
-
+                  
          return df_merged
       except Exception as e:
          print(f"Failed to calculate p-value for {rep}: {e}")
@@ -79,6 +79,8 @@ def main():
          tsv_folder = input_dir/subfolder/"individual_tsv"
          processed_folder = current_path/"pvals"/subfolder
          processed_folder.mkdir(exist_ok = True, parents = True)
+         wt_7ko = subfolder.split("-")[0]
+         cyto_nuc = subfolder.split("-")[1]
             
          if subfolder.is_dir():
             ## Collect paths of .tsv files and put in list
@@ -102,8 +104,8 @@ def main():
                   mask = filtertsv.create_mask(df, colnames)
                   df = df.loc[mask]
                   df_merged = pd.merge(df_merged, df,
-                                    on = selected_colnames,
-                                    how = "outer")
+                                       on = selected_colnames,
+                                       how = "outer").drop_duplicates()
 
             ## Calculate p-values in each TSV
             merged_colnames = df_merged.columns.tolist()
