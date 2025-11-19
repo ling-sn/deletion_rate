@@ -114,17 +114,24 @@ def main():
                         if re.search(r"(Rep\d+)", col)]), 
                         key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))
                        )
-            filtertsv.calc_pval(df_merged, merged_colnames, rep_list)
+            df_pval = filtertsv.calc_pval(df_merged, merged_colnames, rep_list)
 
-            ## Filter by p-value
-            pval_list = [col for col in df_merged.columns 
-                         if re.search(r"Pvalue$", col)]
-            pval_cutoff = df_merged[pval_list].le(0.05).all(axis = 1)
-            df_filtered = df_merged.loc[pval_cutoff]
+            ## Filter by p-value (at least 2/3 replicates pass cutoff)
+            df_pval["Pvalue_Pass_Cutoff"] = 0
+
+            pval_list = [col for col in df_pval.columns 
+                         if re.search("_Pvalue$", col)]
+
+            for col in pval_list:
+               pval_condition = df_pval[col] <= 0.05
+               df_pval.loc[pval_condition, "Pvalue_Pass_Cutoff"] += 1
+
+            count_cutoff = df_pval["Pvalue_Pass_Cutoff"].ge(2)
+            df_final = df_pval.loc[count_cutoff]
 
             ## Save as output
             output_dir = processed_folder/f"{subfolder.name}-Pvals.tsv"
-            df_filtered.to_csv(output_dir, sep = "\t", index = False)
+            df_final.to_csv(output_dir, sep = "\t", index = False)
 
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
