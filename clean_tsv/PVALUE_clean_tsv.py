@@ -75,8 +75,8 @@ def main():
    filtertsv = FilterTSV()
 
    try: 
-      processed_folder = current_path/"pvals"
-      processed_folder.mkdir(exist_ok = True, parents = True)
+      pvals_folder = current_path/"pvals"
+      pvals_folder.mkdir(exist_ok = True, parents = True)
 
       for subfolder in input_dir.iterdir():
          tsv_folder = input_dir/subfolder/"individual_tsv"
@@ -131,7 +131,7 @@ def main():
             df_final = df_pval.loc[count_cutoff]
 
             ## Save as output
-            output_dir = processed_folder/f"{subfolder.name}-Pvals.tsv"
+            output_dir = pvals_folder/f"{subfolder.name}-Pvals.tsv"
             df_final.to_csv(output_dir, sep = "\t", index = False)
 
    except Exception as e:
