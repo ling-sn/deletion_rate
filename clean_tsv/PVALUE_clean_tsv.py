@@ -79,8 +79,6 @@ def main():
          tsv_folder = input_dir/subfolder/"individual_tsv"
          processed_folder = current_path/"pvals"/subfolder
          processed_folder.mkdir(exist_ok = True, parents = True)
-         wt_7ko = subfolder.split("-")[0]
-         cyto_nuc = subfolder.split("-")[1]
             
          if subfolder.is_dir():
             ## Collect paths of .tsv files and put in list
