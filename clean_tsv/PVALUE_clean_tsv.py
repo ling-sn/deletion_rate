@@ -129,11 +129,8 @@ def main():
             df_final = df_pval.loc[count_cutoff]
 
             ## Save as output
-            output_dir = processed_folder/f"{subfolder.name}"
-            output_dir.mkdir(exist_ok = True, parents = True)
-            
-            output_name = output_dir/f"{subfolder.name}-Pvals.tsv"
-            df_final.to_csv(output_name, sep = "\t", index = False)
+            output_dir = processed_folder/f"{subfolder.name}-Pvals.tsv"
+            df_final.to_csv(output_dir, sep = "\t", index = False)
 
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
