@@ -75,11 +75,12 @@ def main():
    filtertsv = FilterTSV()
 
    try: 
+      processed_folder = current_path/"pvals"
+      processed_folder.mkdir(exist_ok = True, parents = True)
+
       for subfolder in input_dir.iterdir():
          tsv_folder = input_dir/subfolder/"individual_tsv"
-         processed_folder = current_path/"pvals"/subfolder
-         processed_folder.mkdir(exist_ok = True, parents = True)
-            
+
          if subfolder.is_dir():
             ## Collect paths of .tsv files and put in list
             tsv_list = sorted(
@@ -128,8 +129,11 @@ def main():
             df_final = df_pval.loc[count_cutoff]
 
             ## Save as output
-            output_dir = processed_folder/f"{subfolder.name}-Pvals.tsv"
-            df_final.to_csv(output_dir, sep = "\t", index = False)
+            output_dir = processed_folder/f"{subfolder.name}"
+            output_dir.mkdir(exist_ok = True, parents = True)
+            
+            output_name = output_dir/f"{subfolder.name}-Pvals.tsv"
+            df_final.to_csv(output_name, sep = "\t", index = False)
 
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
