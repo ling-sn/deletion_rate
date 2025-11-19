@@ -62,6 +62,54 @@ class FilterTSV:
          print(f"Failed to calculate p-value for {rep}: {e}")
          traceback.print_exc()
          raise
+   
+   def merge_WT_7KO(self, matching_name, pvals_tsv, wt_7ko_dir):
+      matches = [tsv for tsv in pvals_tsv if re.search(matching_name, tsv.stem)]
+      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
+      
+      """
+      1. Ensure 7KO is merged with WT, so WT columns appear first
+      2. If either dataframe is not empty, then merge w/ inner join
+      3. No need to iteratively merge because there are only 2 files
+      """  
+      first_cols = df_list[0].columns.tolist()
+      
+      if any(re.search("WT", col) for col in first_cols):
+         df1 = df_list[0]
+         df2 = df_list[1]
+      else:
+         df1 = df_list[1]
+         df2 = df_list[0]
+         
+      """
+      Rename differing columns (except {WT|7KO}_Pvalue_Pass column) with prefix
+      """
+      selected_colnames = (df1.columns.tolist())[0:17]
+      diff_cols = (df1.columns.difference(selected_colnames, sort = False))[:-1]
+      
+      for df, prefix in zip([df1, df2], ["WT_", "7KO_"]):
+         for old_name in diff_cols:
+            new_name = prefix + old_name
+            df.rename(columns = {old_name: new_name}, inplace = True)
+            
+      """
+      Merge df1 & df2
+      """
+      if not df1.empty and not df2.empty:
+         merged = pd.merge(df1, df2, on = selected_colnames, how = "inner")
+      elif df1.empty:
+         merged = df2
+      else:
+         merged = df1
+         
+      """
+      1. Create output name
+         e.g., 7KO-Cyto-Pvals + WT-Cyto-Pvals -> Cyto
+      2. Save merged dataframe as TSV
+      """
+      output_name = (matches[0].stem).split("-")[1]
+      merged_dir = wt_7ko_dir/f"{output_name}.tsv"
+      merged.to_csv(merged_dir, sep = "\t", index = False)
 
 def main():
    """
@@ -133,6 +181,18 @@ def main():
             ## Save as output
             output_dir = pvals_folder/f"{subfolder.name}-Pvals.tsv"
             df_final.to_csv(output_dir, sep = "\t", index = False)
+
+      ## After p-value calculations, create final merged ouputs
+      processed_folder = current_path/"merged"
+      processed_folder.mkdir(exist_ok = True, parents = True)
+      wt_7ko_dir = processed_folder/"merged_WT_7KO"
+      wt_7ko_dir.mkdir(exist_ok = True, parents = True)
+
+      pvals_tsv = list(pvals_folder.glob("*.tsv"))
+
+      for matching_name in ["-Cyto-Pvals", "-Nuc-Pvals"]:
+         filtertsv.merge_WT_7KO(matching_name, pvals_tsv, wt_7ko_dir)
+
 
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
