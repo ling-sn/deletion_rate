@@ -128,7 +128,7 @@ def main():
 
       for subfolder in input_dir.iterdir():
          tsv_folder = input_dir/subfolder/"individual_tsv"
-         wt_7ko = subfolder.split("-")[0]
+         wt_7ko = subfolder.stem.split("-")[0]
 
          if subfolder.is_dir():
             ## Collect paths of .tsv files and put in list
