@@ -80,6 +80,7 @@ def main():
 
       for subfolder in input_dir.iterdir():
          tsv_folder = input_dir/subfolder/"individual_tsv"
+         wt_7ko = subfolder.split("-")[0]
 
          if subfolder.is_dir():
             ## Collect paths of .tsv files and put in list
@@ -116,16 +117,17 @@ def main():
             df_pval = filtertsv.calc_pval(df_merged, merged_colnames, rep_list)
 
             ## Filter by p-value (at least 2/3 replicates pass cutoff)
-            df_pval["Pvalue_Pass_Cutoff"] = 0
+            pval_cutoff_name = f"{wt_7ko}_Pvalue_Pass"
+            df_pval[pval_cutoff_name] = 0
 
             pval_list = [col for col in df_pval.columns 
                          if re.search("_Pvalue$", col)]
 
             for col in pval_list:
                pval_condition = df_pval[col] <= 0.05
-               df_pval.loc[pval_condition, "Pvalue_Pass_Cutoff"] += 1
+               df_pval.loc[pval_condition, pval_cutoff_name] += 1
 
-            count_cutoff = df_pval["Pvalue_Pass_Cutoff"].ge(2)
+            count_cutoff = df_pval[pval_cutoff_name].ge(2)
             df_final = df_pval.loc[count_cutoff]
 
             ## Save as output
