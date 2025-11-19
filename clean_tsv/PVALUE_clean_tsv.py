@@ -63,13 +63,13 @@ class FilterTSV:
          traceback.print_exc()
          raise
    
-   def merge_WT_7KO(self, matching_name, pvals_tsv, wt_7ko_dir):
+   def merge_WT_7KO(self, matching_name, pvals_tsv, processed_folder):
       matches = [tsv for tsv in pvals_tsv if re.search(matching_name, tsv.stem)]
       df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
       
       """
       1. Ensure 7KO is merged with WT, so WT columns appear first
-      2. If either dataframe is not empty, then merge w/ inner join
+      2. If either dataframe is not empty, then merge w/ outer join
       3. No need to iteratively merge because there are only 2 files
       """  
       first_cols = df_list[0].columns.tolist()
@@ -96,7 +96,7 @@ class FilterTSV:
       Merge df1 & df2
       """
       if not df1.empty and not df2.empty:
-         merged = pd.merge(df1, df2, on = selected_colnames, how = "inner")
+         merged = pd.merge(df1, df2, on = selected_colnames, how = "outer")
       elif df1.empty:
          merged = df2
       else:
@@ -108,7 +108,7 @@ class FilterTSV:
       2. Save merged dataframe as TSV
       """
       output_name = (matches[0].stem).split("-")[1]
-      merged_dir = wt_7ko_dir/f"{output_name}.tsv"
+      merged_dir = processed_folder/f"{output_name}.tsv"
       merged.to_csv(merged_dir, sep = "\t", index = False)
 
 def main():
@@ -185,13 +185,11 @@ def main():
       ## After p-value calculations, create final merged ouputs
       processed_folder = current_path/"merged"
       processed_folder.mkdir(exist_ok = True, parents = True)
-      wt_7ko_dir = processed_folder/"merged_WT_7KO"
-      wt_7ko_dir.mkdir(exist_ok = True, parents = True)
 
       pvals_tsv = list(pvals_folder.glob("*.tsv"))
 
       for matching_name in ["-Cyto-Pvals", "-Nuc-Pvals"]:
-         filtertsv.merge_WT_7KO(matching_name, pvals_tsv, wt_7ko_dir)
+         filtertsv.merge_WT_7KO(matching_name, pvals_tsv, processed_folder)
 
 
    except Exception as e:
