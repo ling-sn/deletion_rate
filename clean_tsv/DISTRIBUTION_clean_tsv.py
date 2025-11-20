@@ -4,9 +4,22 @@ import traceback
 import pandas as pd
 import numpy as np
 import re
-from scipy.stats import fisher_exact
 
 class FilterTSV:
+   def iter_merge(self, df_list):
+      df1_cols = df_list[0].columns.tolist()
+      selected_cols = df1_cols[0:17]
+      merged = self.drop_cols(df_list[0], df1_cols, selected_cols)
+      
+      for df in df_list[1:]:
+         if not df.empty:
+            cols = df.columns.tolist()
+            df = self.drop_cols(df, cols, selected_cols)
+            merged = pd.merge(merged, df,
+                              on = selected_cols,
+                              how = "outer")
+      return merged
+
    def drop_cols(self, df, colnames, selected_colnames):
       """
       NOTES:
@@ -26,25 +39,11 @@ class FilterTSV:
       1. Search TSVs for matching suffix in filename
       2. Put them in list
       3. Read in as pandas dataframes
+      4. Iteratively merge w/ helper function
       """
       matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
       df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-
-      """
-      Copy + paste iterative merging code from original clean_tsv
-      because there are 3 replicates
-      """
-      df1_colnames = df_list[0].columns.tolist()
-      selected_colnames = df1_colnames[0:17]
-      merged = self.drop_cols(df_list[0], df1_colnames, selected_colnames)
-      
-      for df in df_list[1:]:
-         if not df.empty:
-            colnames = df.columns.tolist()
-            df = self.drop_cols(df, colnames, selected_colnames)
-            merged = pd.merge(merged, df,
-                              on = selected_colnames,
-                              how = "outer")
+      merged = self.iter_merge(df_list)
 
       """
       1. Define col_start and col_end so that concatenation
@@ -108,7 +107,14 @@ def main():
       merged_reps_tsv = list(reps_dir.glob("*.tsv"))
 
       ## Create 4 separate merged dataframes
-      
+      df_name = {}
+      file_pattern = ["7KO.*BS", "WT.*BS", "WT.*NBS"]
+      var_names = ["7ko_bs_dr", "wt_bs_dr", "wt_nbs_dr"] 
+
+      for pattern, name in zip(file_pattern, var_names):
+         matches = [tsv for tsv in merged_reps_tsv if re.search(pattern, tsv.stem)]
+         df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
+         df_name[name] = filtertsv.iter_merge(df_list)
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
