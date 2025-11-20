@@ -7,6 +7,20 @@ import re
 from scipy.stats import fisher_exact
 
 class FilterTSV:
+   def drop_cols(self, df, colnames, selected_colnames):
+      """
+      NOTES:
+      * Before each merge, drop all columns that are not:
+         1. selected_cols
+         2. TotalCoverage
+         3. DeletionRate
+      """
+      keep_list = list([col for col in colnames 
+                        if re.search("(TotalCoverage|DeletionRate)", col)]) + selected_colnames
+      diff_cols = (df.columns.difference(keep_list, sort = False))
+      df.drop(columns = diff_cols, inplace = True)
+      return df
+
    def merge_reps(self, suffix, tsv_list, subfolder, reps_dir):
       """
       1. Search TSVs for matching suffix in filename
@@ -20,16 +34,18 @@ class FilterTSV:
       Copy + paste iterative merging code from original clean_tsv
       because there are 3 replicates
       """
-      merged = df_list[0]
-      df1_colnames = merged.columns.tolist()
+      df1_colnames = df_list[0].columns.tolist()
       selected_colnames = df1_colnames[0:17]
-
+      merged = self.drop_cols(df_list[0], df1_colnames, selected_colnames)
+      
       for df in df_list[1:]:
          if not df.empty:
+            colnames = df.columns.tolist()
+            df = self.drop_cols(df, colnames, selected_colnames)
             merged = pd.merge(merged, df,
                               on = selected_colnames,
                               how = "outer")
-      
+
       """
       1. Define col_start and col_end so that concatenation
          results in examples like:
@@ -57,93 +73,6 @@ class FilterTSV:
       df[avg_col] = df[dr_col].mean(axis = 1)
       df[std_col] = df[dr_col].std(axis = 1)
       return df
-
-   def merge_WT_7KO(self, matching_name, merged_reps_tsv, wt_7ko_dir):
-      matches = [tsv for tsv in merged_reps_tsv if re.search(matching_name, tsv.stem)]
-      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-
-      """
-      1. Ensure 7KO is merged with WT, so WT columns appear first
-      2. If either dataframe is not empty, then merge w/ inner join
-      3. No need to iteratively merge because there are only 2 files
-      """
-      first_cols = df_list[0].columns.tolist()
-
-      if any(re.search("WT", col) for col in first_cols):
-         df1 = df_list[0]
-         df2 = df_list[1]
-      else:
-         df1 = df_list[1]
-         df2 = df_list[0]
-      
-      """
-      Rename differing columns (except Avg & Std) with prefix
-      """
-      selected_colnames = (df1.columns.tolist())[0:17]
-      diff_cols = (df1.columns.difference(selected_colnames, sort = False))[:-2]
-
-      for df, prefix in zip([df1, df2], ["WT_", "7KO_"]):
-         for old_name in diff_cols:
-            new_name = prefix + old_name
-            df.rename(columns = {old_name: new_name}, inplace = True)
-
-      """
-      Merge df1 & df2
-      """
-      if not df1.empty and not df2.empty:
-         merged = pd.merge(df1, df2, on = selected_colnames, how = "inner")
-      elif df1.empty:
-         merged = df2
-      else:
-         merged = df1
-      
-      """
-      1. Create output name
-         e.g., 7KO-Cyto-BS -> Cyto-BS
-      2. Save merged dataframe as TSV
-      """
-      separator = "-"
-      base = (matches[0].stem).split(separator) ## Obtain ['7KO', 'Cyto', 'BS']
-      output_name = separator.join(item for item in base[1:]) ## Obtain Cyto-BS
-      
-      merged_dir = wt_7ko_dir/f"{output_name}.tsv"
-      merged.to_csv(merged_dir, sep = "\t", index = False)
-
-   def merge_BS_NBS(self, fraction, merged_wt_7ko_tsv, bs_nbs_dir):
-      matches = [tsv for tsv in merged_wt_7ko_tsv if re.search(fraction, tsv.stem)]
-      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-
-      """
-      1. Ensure NBS is merged with BS, so BS columns appear first
-      2. If either dataframe is not empty, then merge w/ inner join
-      3. No need to iteratively merge because there are only 2 files
-      """
-      first_cols = df_list[0].columns.tolist()
-
-      if any(re.search("_BS", col) for col in first_cols):
-         df1 = df_list[0]
-         df2 = df_list[1]
-      else:
-         df1 = df_list[1]
-         df2 = df_list[0]
-
-      selected_colnames = (df1.columns.tolist())[0:17]
-
-      if not df1.empty and not df2.empty:
-         merged = pd.merge(df1, df2, on = selected_colnames, how = "inner")
-      elif df1.empty:
-         merged = df2
-      else:
-         merged = df1
-      
-      """
-      1. Create output name
-         e.g., Cyto-BS -> Cyto
-      2. Save merged dataframe as TSV
-      """
-      output_name = (matches[0].stem).split("-")[0]
-      merged_dir = bs_nbs_dir/f"{output_name}.tsv"
-      merged.to_csv(merged_dir, sep = "\t", index = False)
 
 def main():
    """
@@ -178,32 +107,8 @@ def main():
       ## Collect all TSVs in reps_dir
       merged_reps_tsv = list(reps_dir.glob("*.tsv"))
 
-      ## Merge TSV pairs by WT/7KO
-      """
-      Example:
-      * 7KO-Cyto-BS <-> WT-Cyto-BS = Cyto-BS
-      * 7KO-Cyto-NBS <-> WT-Cyto-NBS = Cyto-NBS
-      * 7KO-Nuc-BS <-> WT-Nuc-BS = Nuc-BS
-      * 7KO-Nuc-NBS <-> WT-Nuc-NBS = Nuc-NBS
-      """
-      wt_7ko_dir = processed_folder/"merged_WT_7KO"
-      wt_7ko_dir.mkdir(exist_ok = True, parents = True)
-      for matching_name in ["-Cyto-BS", "-Cyto-NBS", "-Nuc-BS", "-Nuc-NBS"]:
-         filtertsv.merge_WT_7KO(matching_name, merged_reps_tsv, wt_7ko_dir)
+      ## Create 4 separate merged dataframes
       
-      ## Collect all TSVs in wt_7ko_dir
-      merged_wt_7ko_tsv = list(wt_7ko_dir.glob("*.tsv"))
-
-      ## Merge TSV pairs by BS/NBS
-      """
-      Example: 
-      * Cyto-BS <-> Cyto-NBS = Cyto
-      * Nuc-BS <-> Nuc-NBS = Nuc
-      """
-      bs_nbs_dir = processed_folder/"final_outputs"
-      bs_nbs_dir.mkdir(exist_ok = True, parents = True)
-      for fraction in ["Cyto", "Nuc"]:
-         filtertsv.merge_BS_NBS(fraction, merged_wt_7ko_tsv, bs_nbs_dir)
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
