@@ -4,23 +4,38 @@ import traceback
 import pandas as pd
 import numpy as np
 import re
+from itertools import chain
 
 class FilterTSV:
-   def iter_merge(self, df_list):
-      df1_cols = df_list[0].columns.tolist()
-      selected_cols = df1_cols[0:17]
-      merged = self.drop_cols(df_list[0], df1_cols, selected_cols)
-      
-      for df in df_list[1:]:
-         if not df.empty:
-            cols = df.columns.tolist()
-            df = self.drop_cols(df, cols, selected_cols)
-            merged = pd.merge(merged, df,
-                              on = selected_cols,
-                              how = "outer")
-      return merged
+   def iter_concat(self, df_list):
+      """
+      * Rename all columns that match "_TotalCoverage_" or "_DeletionRate_"
+        to a generic name
+      * Concatenate dataframes
+      """
+      concat_list = []
+      nested_list = []
+      new_names = []
+      pattern_list = ["_TotalCoverage_", "_DeletionRate_"]
 
-   def drop_cols(self, df, colnames, selected_colnames):
+      for df in df_list:
+         for pattern in pattern_list:
+            new_names.append(pattern.strip("_"))
+            match = [col for col in df.columns if re.search(pattern, col)]
+            if match:
+               nested_list.append(match)
+
+         col_list = list(chain.from_iterable(nested_list))
+         
+         name_dict = dict(zip(col_list, new_names))
+         df = df.rename(columns = name_dict)  
+         concat_list.append(df)
+      
+      df_concat = pd.concat(concat_list, ignore_index = True)
+
+      return df_concat
+
+   def drop_cols(self, df, colnames, selected_cols):
       """
       NOTES:
       * Before each merge, drop all columns that are not:
@@ -29,49 +44,33 @@ class FilterTSV:
          3. DeletionRate
       """
       keep_list = list([col for col in colnames 
-                        if re.search("(TotalCoverage|DeletionRate)", col)]) + selected_colnames
+                        if re.search("(TotalCoverage|DeletionRate)", col)]) + selected_cols
       diff_cols = (df.columns.difference(keep_list, sort = False))
-      df.drop(columns = diff_cols, inplace = True)
+      df = df.drop(columns = diff_cols)
       return df
 
-   def merge_reps(self, suffix, tsv_list, subfolder, reps_dir):
+   def concat_reps(self, suffix, tsv_list, subfolder, reps_dir):
       """
       1. Search TSVs for matching suffix in filename
       2. Put them in list
       3. Read in as pandas dataframes
-      4. Iteratively merge w/ helper function
+      4. For each dataframe, rename dynamically renamed
+         "TotalCoverage" and "DeletionRate" columns to
+         generic name
+      5. Iteratively concatenate w/ helper function
+      6. Drop excess rows
       """
       matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
       df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-      merged = self.iter_merge(df_list)
-
-      """
-      1. Define col_start and col_end so that concatenation
-         results in examples like:
-         a. 7KO_AvgDeletionRate_BS
-         b. 7KO_StdDeletionRate_BS
-      2. Create AvgDeletionRate and StdDeletionRate columns
-         in merged df
-      """
-      col_start = subfolder.name.split("-")[0]
-      col_end = suffix.split("-")[1]
-      avg_col = col_start + "_AvgDeletionRate_" + col_end
-      std_col = col_start + "_StdDeletionRate_" + col_end
-
-      calc_merged = self.calc_avg_std(merged, avg_col, std_col)
-      calc_merged = calc_merged.drop_duplicates().sort_values(by = avg_col, ascending = False)
+      selected_cols = (df_list[0].columns.tolist())[0:17]
+      df_concat = self.iter_concat(df_list)
+      df_final = self.drop_cols(df_concat, df_concat.columns, selected_cols)
 
       """
       Save merged dataframe as TSV
       """
       merged_dir = reps_dir/f"{subfolder.name}{suffix}.tsv"
-      calc_merged.to_csv(merged_dir, sep = "\t", index = False)
-
-   def calc_avg_std(self, df, avg_col, std_col):
-      dr_col = [col for col in df.columns if re.search("_DeletionRate_", col)]
-      df[avg_col] = df[dr_col].mean(axis = 1)
-      df[std_col] = df[dr_col].std(axis = 1)
-      return df
+      df_final.to_csv(merged_dir, sep = "\t", index = False)
 
 def main():
    """
@@ -99,22 +98,40 @@ def main():
                tsv_folder.glob("*.tsv"),
                key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
             ) 
+
             ## Merge replicates for each sample type
             for suffix in ["-BS", "-NBS"]:
-               filtertsv.merge_reps(suffix, tsv_list, subfolder, reps_dir)
+               filtertsv.concat_reps(suffix, tsv_list, subfolder, reps_dir)
 
       ## Collect all TSVs in reps_dir
-      merged_reps_tsv = list(reps_dir.glob("*.tsv"))
+      concat_reps_tsv = list(reps_dir.glob("*.tsv"))
 
-      ## Create 4 separate merged dataframes
+      ## Create merged dataframe of all files
+      df_list = [pd.read_csv(str(file), sep = "\t") for file in concat_reps_tsv]
+      total_cov = filtertsv.iter_merge(df_list)
+
+      ## Create 3 separate merged dataframes (based on pattern)
       df_name = {}
       file_pattern = ["7KO.*BS", "WT.*BS", "WT.*NBS"]
       var_names = ["7ko_bs_dr", "wt_bs_dr", "wt_nbs_dr"] 
 
       for pattern, name in zip(file_pattern, var_names):
-         matches = [tsv for tsv in merged_reps_tsv if re.search(pattern, tsv.stem)]
-         df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-         df_name[name] = filtertsv.iter_merge(df_list)
+         matches = [tsv for tsv in concat_reps_tsv if re.search(pattern, tsv.stem)]
+         match_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
+         df_name[name] = filtertsv.iter_merge(match_list)
+
+      """
+      We now have 4 dataframes:
+      * total_cov = Merged all files in reps_dir
+      * 7ko_bs_dr = Only merged files with '7KO.*BS' pattern in reps_dir
+      * wt_bs_dr = Only merged files with 'WT.*BS' pattern in reps_dir
+      * wt_nbs_dr = Only merged files with 'WT.*NBS' pattern in reps_dir
+      """
+      # pattern_list = ["_TotalCoverage_", "_DeletionRate_"]
+      # concat_list = filtertsv.preprocess_df(df_list, pattern_list)
+      # df_concat = pd.concat(concat_list, ignore_index = True)
+      
+      ## TODO: Collect all DeletionRate rows **for each group** to obtain one series
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
