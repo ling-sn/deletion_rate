@@ -106,11 +106,11 @@ def main():
       ## Collect all TSVs in reps_dir
       concat_reps_tsv = list(reps_dir.glob("*.tsv"))
 
-      ## Create merged dataframe of all files
+      ## Create concat dataframe of all files in rep_dir
       df_list = [pd.read_csv(str(file), sep = "\t") for file in concat_reps_tsv]
-      total_cov = filtertsv.iter_merge(df_list)
+      total_cov = pd.concat(df_list, ignore_index = True)
 
-      ## Create 3 separate merged dataframes (based on pattern)
+      ## Create 3 additonal concat dataframes based on pattern
       df_name = {}
       file_pattern = ["7KO.*BS", "WT.*BS", "WT.*NBS"]
       var_names = ["7ko_bs_dr", "wt_bs_dr", "wt_nbs_dr"] 
@@ -118,20 +118,19 @@ def main():
       for pattern, name in zip(file_pattern, var_names):
          matches = [tsv for tsv in concat_reps_tsv if re.search(pattern, tsv.stem)]
          match_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-         df_name[name] = filtertsv.iter_merge(match_list)
+         df_name[name] = pd.concat(match_list, ignore_index = True)
 
       """
       We now have 4 dataframes:
-      * total_cov = Merged all files in reps_dir
-      * 7ko_bs_dr = Only merged files with '7KO.*BS' pattern in reps_dir
-      * wt_bs_dr = Only merged files with 'WT.*BS' pattern in reps_dir
-      * wt_nbs_dr = Only merged files with 'WT.*NBS' pattern in reps_dir
+      * total_cov = Concat of all files in reps_dir
+      * 7ko_bs_dr = Concat of files with '7KO.*BS' pattern in reps_dir
+      * wt_bs_dr = Concat of files with 'WT.*BS' pattern in reps_dir
+      * wt_nbs_dr = Concat of files with 'WT.*NBS' pattern in reps_dir
+      ---
+      In each dataframe, we concatenated all TotalCoverage and DeletionRate together
+      Proceed by graphing distributions
       """
-      # pattern_list = ["_TotalCoverage_", "_DeletionRate_"]
-      # concat_list = filtertsv.preprocess_df(df_list, pattern_list)
-      # df_concat = pd.concat(concat_list, ignore_index = True)
-      
-      ## TODO: Collect all DeletionRate rows **for each group** to obtain one series
+      ## TODO: Graph distributions and save as output
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
