@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import re
 from itertools import chain
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class FilterTSV:
    def iter_concat(self, df_list):
@@ -127,11 +129,71 @@ def main():
       * wt_bs_dr = Concat of files with 'WT.*BS' pattern in reps_dir
       * wt_nbs_dr = Concat of files with 'WT.*NBS' pattern in reps_dir
       ---
-      In each dataframe, we concatenated all TotalCoverage and DeletionRate together
-      Proceed by graphing distributions
+      In each dataframe, we concatenated all TotalCoverage and DeletionRate together.
+      Proceed by graphing distributions.
       """
-      ## TODO: Graph distributions and save as output
+      graph_folder = current_path/"distributions"
+      graph_folder.mkdir(exist_ok = True, parents = True)
+      df_graphs = [total_cov, df_name["7ko_bs_dr"], 
+                   df_name["wt_bs_dr"], df_name["wt_nbs_dr"]]
+      
+      sns.set_palette(palette = "plasma_r")
+      counter = 1
+      
+      try: 
+         for df in df_graphs:
+            if counter == 1:
+               col = "TotalCoverage"
 
+               ## Create histogram
+               hist_fig = plt.figure(figsize = (10, 6.5))
+               sns.displot(data = df, x = col, 
+                           kde = True, edgecolor = None, shrink = 0.90)
+               plt.title(f"Figure {counter}: Histogram of all {col}")
+               hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram", format = "png", dpi = 300)
+
+               ## Create ECDF and plot median
+               ecdf_fig = plt.figure(figsize = (10, 6.5))
+               sns.ecdfplot(total_cov[col])
+               median = total_cov[col].median()
+               plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+               plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+               plt.text(median, 0.52, f"Median: {median:<6}", 
+                        horizontalalignment = "right", 
+                        verticalalignment = "bottom") 
+               counter += 1
+               plt.title(f"Figure {counter}: ECDF of all {col}")
+               ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF", format = "png", dpi = 300)
+            else:
+               col = "DeletionRate"
+               key = str(next(key for key, val in df_name.items() if val == df))
+               sample_group = "-".join(key.split("_")[0:2]).upper()
+
+               hist_fig = plt.figure(figsize = (10, 6.5))
+               sns.displot(data = df, x = col, 
+                           kde = True, edgecolor = None, shrink = 0.90)
+               counter += 1
+               plt.title(f"Figure {counter}: Histogram of all {col} in {sample_group}")
+               hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
+                              format = "png", dpi = 300)
+
+               ## Create ECDF and plot median
+               ecdf_fig = plt.figure(figsize = (10, 6.5))
+               sns.ecdfplot(df[col])
+               median = df[col].median()
+               plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+               plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+               plt.text(median, 0.52, f"Median: {median:<6}", 
+                        horizontalalignment = "right", 
+                        verticalalignment = "bottom") 
+               counter += 1
+               plt.title(f"Figure {counter}: ECDF of all {col} in {sample_group}")
+               ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
+                              format = "png", dpi = 300)
+      except Exception as e:
+         print(f"Failed to create distribution graphs: {e}")
+         traceback.print_exc()
+         raise
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
       traceback.print_exc()
