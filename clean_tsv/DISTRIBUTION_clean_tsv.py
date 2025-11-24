@@ -51,7 +51,7 @@ class FilterTSV:
       df = df.drop(columns = diff_cols)
       return df
 
-   def concat_reps(self, suffix, tsv_list, subfolder, reps_dir):
+   def concat_reps(self, suffix, tsv_list, subfolder, processed_folder):
       """
       1. Search TSVs for matching suffix in filename
       2. Put them in list
@@ -71,7 +71,7 @@ class FilterTSV:
       """
       Save merged dataframe as TSV
       """
-      merged_dir = reps_dir/f"{subfolder.name}{suffix}.tsv"
+      merged_dir = processed_folder/f"{subfolder.name}{suffix}.tsv"
       df_final.to_csv(merged_dir, sep = "\t", index = False)
 
 def main():
@@ -88,8 +88,6 @@ def main():
    try: 
       processed_folder = current_path/"merged"
       processed_folder.mkdir(exist_ok = True, parents = True)
-      reps_dir = processed_folder/"merged_reps"
-      reps_dir.mkdir(exist_ok = True, parents = True)
 
       for subfolder in input_dir.iterdir():
          tsv_folder = input_dir/subfolder/"individual_tsv"
@@ -103,10 +101,10 @@ def main():
 
             ## Merge replicates for each sample type
             for suffix in ["-BS", "-NBS"]:
-               filtertsv.concat_reps(suffix, tsv_list, subfolder, reps_dir)
+               filtertsv.concat_reps(suffix, tsv_list, subfolder, processed_folder)
 
-      ## Collect all TSVs in reps_dir
-      concat_reps_tsv = list(reps_dir.glob("*.tsv"))
+      ## Collect all TSVs in processed_folder
+      concat_reps_tsv = list(processed_folder.glob("*.tsv"))
 
       ## Create concat dataframe of all files in rep_dir
       df_list = [pd.read_csv(str(file), sep = "\t") for file in concat_reps_tsv]
@@ -124,10 +122,10 @@ def main():
 
       """
       We now have 4 dataframes:
-      * total_cov = Concat of all files in reps_dir
-      * 7ko_bs_dr = Concat of files with '7KO.*BS' pattern in reps_dir
-      * wt_bs_dr = Concat of files with 'WT.*BS' pattern in reps_dir
-      * wt_nbs_dr = Concat of files with 'WT.*NBS' pattern in reps_dir
+      * total_cov = Concat of all files in processed_folder
+      * 7ko_bs_dr = Concat of files with '7KO.*BS' pattern in processed_folder
+      * wt_bs_dr = Concat of files with 'WT.*BS' pattern in processed_folder
+      * wt_nbs_dr = Concat of files with 'WT.*NBS' pattern in processed_folder
       ---
       In each dataframe, we concatenated all TotalCoverage and DeletionRate together.
       Proceed by graphing distributions.
