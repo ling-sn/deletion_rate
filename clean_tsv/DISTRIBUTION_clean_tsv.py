@@ -151,6 +151,7 @@ def main():
                            kde = True, edgecolor = None, shrink = 0.90)
                plt.title(f"Figure {counter}: Histogram of all {col}")
                hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram", format = "png", dpi = 300)
+               plt.close()
 
                ## Create ECDF and plot median
                ecdf_fig = plt.figure(figsize = (10, 6.5))
@@ -164,9 +165,10 @@ def main():
                counter += 1
                plt.title(f"Figure {counter}: ECDF of all {col}")
                ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF", format = "png", dpi = 300)
+               plt.close()
             else:
                col = "DeletionRate"
-               key = str(next(key for key, val in df_name.items() if val == df))
+               key = str(next(key for key, val in df_name.items() if val.equals(df)))
                sample_group = "-".join(key.split("_")[0:2]).upper()
 
                hist_fig = plt.figure(figsize = (10, 6.5))
@@ -176,6 +178,7 @@ def main():
                plt.title(f"Figure {counter}: Histogram of all {col} in {sample_group}")
                hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
                               format = "png", dpi = 300)
+               plt.close()
 
                ## Create ECDF and plot median
                ecdf_fig = plt.figure(figsize = (10, 6.5))
@@ -190,6 +193,7 @@ def main():
                plt.title(f"Figure {counter}: ECDF of all {col} in {sample_group}")
                ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
                               format = "png", dpi = 300)
+               plt.close()
       except Exception as e:
          print(f"Failed to create distribution graphs: {e}")
          traceback.print_exc()
