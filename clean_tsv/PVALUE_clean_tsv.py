@@ -42,7 +42,7 @@ class FilterTSV:
             if set(fisher_cols).issubset(df_merged.columns):
                df_merged = df_merged.dropna(subset = fisher_cols)
                arr = df_merged[fisher_cols].values.reshape(-1, 2, 2) 
-               pvals = [fisher_exact(table)[1] for table in arr]
+               pvals = [fisher_exact(table, alternative = "greater")[1] for table in arr]
                df_merged[f"{rep}_Pvalue"] = pvals
                   
          return df_merged
