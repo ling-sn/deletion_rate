@@ -6,19 +6,7 @@ import numpy as np
 import re
 from scipy.stats import fisher_exact
 
-class FilterTSV:
-   def create_mask(self, df, colnames):
-      """
-      NOTES:
-      * Select columns that contain "Deletions" and put them in a list
-      * Use set() to remove duplicates, since sets can only contain unique vals
-      * Pass column names in list to dataframe to create a mask that drops rows
-        where Deletions == 0 and there are nulls
-      """
-      del_list = list(set([col for col in colnames if re.search(r"Deletions", col)]))
-      mask = ~(df[del_list] == 0).any(axis = 1) & (df.notna().all(axis = 1))
-      return mask
-   
+class FilterTSV:   
    def calc_pval(self, df_merged, merged_colnames, rep_list):
       try:
          for rep in rep_list:
@@ -141,16 +129,11 @@ def main():
             df_list = [pd.read_csv(str(file), sep = "\t") for file in tsv_list]
 
             ## Iteratively merge dataframes
-            df1_colnames = df_list[0].columns.tolist()
-            selected_colnames = df1_colnames[0:17]
-            init_mask = filtertsv.create_mask(df_list[0], df1_colnames)
-            df_merged = df_list[0].loc[init_mask]
+            df_merged = df_list[0]
+            selected_colnames = (df_merged.columns.tolist())[0:17]
 
             for df in df_list[1:]:
                if not df.empty:
-                  colnames = df.columns.tolist()
-                  mask = filtertsv.create_mask(df, colnames)
-                  df = df.loc[mask]
                   df_merged = pd.merge(df_merged, df,
                                        on = selected_colnames,
                                        how = "outer").drop_duplicates()
@@ -172,14 +155,18 @@ def main():
                          if re.search("_Pvalue$", col)]
 
             for col in pval_list:
-               pval_condition = df_pval[col] <= 0.05
+               if re.match(fr"WT.*", str(subfolder.stem)):
+                  pval_condition = df_pval[col] <= 0.05                  
+               elif re.match(fr"7KO.*", str(subfolder.stem)):
+                  pval_condition = df_pval[col] >= 0.05
+
                df_pval.loc[pval_condition, pval_cutoff_name] += 1
 
             count_cutoff = df_pval[pval_cutoff_name].ge(2)
             df_final = df_pval.loc[count_cutoff]
 
             ## Save as output
-            output_dir = pvals_folder/f"{subfolder.name}-Pvals.tsv"
+            output_dir = pvals_folder/f"{subfolder.stem}-Pvals.tsv"
             df_final.to_csv(output_dir, sep = "\t", index = False)
 
       ## After p-value calculations, create final merged ouputs
