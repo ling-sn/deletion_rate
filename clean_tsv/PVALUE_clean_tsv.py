@@ -158,7 +158,7 @@ def main():
                if re.match(fr"WT.*", str(subfolder.stem)):
                   pval_condition = df_pval[col] <= 0.05                  
                elif re.match(fr"7KO.*", str(subfolder.stem)):
-                  pval_condition = df_pval[col] >= 0.05
+                  pval_condition = df_pval[col] > 0.05
 
                df_pval.loc[pval_condition, pval_cutoff_name] += 1
 
