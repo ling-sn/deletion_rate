@@ -4,7 +4,7 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --output=clean_tsv_%u_%A_%a.out
 #SBATCH --array=0-11%4
-#SBATCH --account=cweidman0
+#SBATCH --account=cweidman99
 #SBATCH --time=4:00:00
 #SBATCH --mem=16000m
 #SBATCH --partition=standard
