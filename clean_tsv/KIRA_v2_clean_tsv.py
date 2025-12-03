@@ -7,18 +7,6 @@ import re
 from scipy.stats import fisher_exact
 
 class FilterTSV:
-   def create_mask(self, df, colnames):
-      """
-      NOTES:
-      * Select columns that contain "Deletions" and put them in a list
-      * Use set() to remove duplicates, since sets can only contain unique vals
-      * Pass column names in list to dataframe to create a mask that drops rows
-        where Deletions == 0 and there are nulls
-      """
-      del_list = list(set([col for col in colnames if re.search(r"Deletions", col)]))
-      mask = ~(df[del_list] == 0).any(axis = 1) & (df.notna().all(axis = 1))
-      return mask
-
    def merge_reps(self, suffix, tsv_list, subfolder, reps_dir):
       """
       1. Search TSVs for matching suffix in filename
@@ -34,14 +22,10 @@ class FilterTSV:
       """
       df1_colnames = df_list[0].columns.tolist()
       selected_colnames = df1_colnames[0:17]
-      init_mask = self.create_mask(df_list[0], df1_colnames)
-      merged = df_list[0].loc[init_mask]
+      merged = df_list[0]
 
       for df in df_list[1:]:
          if not df.empty:
-            colnames = df.columns.tolist()
-            mask = self.create_mask(df, colnames)
-            df = df.loc[mask]
             merged = pd.merge(merged, df,
                               on = selected_colnames,
                               how = "outer")
