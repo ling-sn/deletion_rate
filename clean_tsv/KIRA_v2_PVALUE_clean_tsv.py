@@ -263,7 +263,6 @@ def main():
       for matching_name in ["-Cyto-Pvals", "-Nuc-Pvals"]:
          filtertsv.merge_WT_7KO(matching_name, pvals_tsv, final_dir)
 
-
    except Exception as e:
       print(f"Failed to create merged .tsv file: {e}")
       traceback.print_exc()
