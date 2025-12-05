@@ -94,7 +94,7 @@ class FilterTSV:
                   if re.search(r"(Rep\d+)", col)]), 
                   key = lambda x: int(re.search(r"Rep(\d+)", x).group(1))
                  )
-      df_pval = self.calc_pval(df_merged, merged_colnames, rep_list, sample)
+      df_pval = self.calc_pval(df_merged, merged_colnames, rep_list)
 
       ## Filter by p-value (at least 2/3 replicates pass cutoff)
       wt_7ko = sample.split("-")[0]
