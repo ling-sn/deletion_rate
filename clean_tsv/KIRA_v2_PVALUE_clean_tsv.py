@@ -52,6 +52,12 @@ class FilterTSV:
       merged_dir = reps_dir/f"{subfolder.name}{suffix}.tsv"
       calc_merged.to_csv(merged_dir, sep = "\t", index = False)
 
+   def calc_avg_std(self, df, avg_col, std_col):
+      dr_col = [col for col in df.columns if re.search("_DeletionRate_", col)]
+      df[avg_col] = df[dr_col].mean(axis = 1)
+      df[std_col] = df[dr_col].std(axis = 1)
+      return df
+
    def merge_BS_NBS(self, sample, merged_reps_tsv, pvals_dir):
       matches = [tsv for tsv in merged_reps_tsv if re.search(sample, tsv.stem)]
       df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
