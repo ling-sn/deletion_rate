@@ -8,35 +8,100 @@ from itertools import chain
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+def graph_plots(counter, graph_folder):
+   try: 
+      if counter == 1:
+         col = "TotalCoverage"
+
+         ## Create histogram
+         hist_fig = plt.figure(figsize = (10, 6.5))
+         sns.displot(data = df, x = col, 
+                     kde = True, edgecolor = None, shrink = 0.90)
+         plt.title(f"Figure {counter}: Histogram of all {col}")
+         hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram", format = "png", dpi = 300)
+         plt.close()
+
+         ## Create ECDF and plot median
+         ecdf_fig = plt.figure(figsize = (10, 6.5))
+         sns.ecdfplot(total_cov[col])
+         median = total_cov[col].median()
+         plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+         plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+         plt.text(median, 0.52, f"Median: {median:<6}", 
+                  horizontalalignment = "right", 
+                  verticalalignment = "bottom") 
+         counter += 1
+         plt.title(f"Figure {counter}: ECDF of all {col}")
+         ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF", format = "png", dpi = 300)
+         plt.close()
+      else:
+         col = "DeletionRate"
+         key = str(next(key for key, val in df_name.items() if val.equals(df)))
+         sample_group = "-".join(key.split("_")[0:2]).upper()
+
+         hist_fig = plt.figure(figsize = (10, 6.5))
+         sns.displot(data = df, x = col, 
+                     kde = True, edgecolor = None, shrink = 0.90)
+         counter += 1
+         plt.title(f"Figure {counter}: Histogram of all {col} in {sample_group}")
+         hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
+                        format = "png", dpi = 300)
+         plt.close()
+
+         ## Create ECDF and plot median
+         ecdf_fig = plt.figure(figsize = (10, 6.5))
+         sns.ecdfplot(df[col])
+         median = df[col].median()
+         plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+         plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+         plt.text(median, 0.52, f"Median: {median:<6}", 
+                  horizontalalignment = "right", 
+                  verticalalignment = "bottom") 
+         counter += 1
+         plt.title(f"Figure {counter}: ECDF of all {col} in {sample_group}")
+         ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
+                        format = "png", dpi = 300)
+         plt.close()
+   except Exception as e:
+      print(f"Failed to create distribution graphs: {e}")
+      traceback.print_exc()
+      raise
+   return
+
 def concat_reps(suffix, tsv_list, subfolder, processed_folder):
    """
    1. Search TSVs for matching suffix in filename
-   2. Put them in list
-   3. Read in as pandas dataframes
-   4. For each dataframe, rename dynamically renamed
+   2. Put them in list & read them in as pandas dfs
+   3. For each dataframe, rename dynamically renamed
       "TotalCoverage" and "DeletionRate" columns to
       generic name
-   5. Iteratively concatenate dfs w/ helper function
-   6. Drop excess rows
+   4. Iteratively concatenate dfs w/ helper function
+   5. Drop excess rows
    """
    matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
    df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
    selected_cols = (df_list[0].columns.tolist())[0:17]
 
    concat_list = []
-   nested_list = []
-   new_names = []
    pattern_list = ["_TotalCoverage_", "_DeletionRate_"]
 
    for df in df_list:
+      nested_list = []
+      new_names = []
+      
       for pattern in pattern_list:
          new_names.append(pattern.strip("_"))
          match = [col for col in df.columns if re.search(pattern, col)]
-         if match:
-            nested_list.append(match)
 
+         ## Execute branch if match list is non-empty
+         if match:
+               ## Add columns that match pattern to nested_list
+               nested_list.append(match)
+
+      ## Flatten list of lists into single list
       col_list = list(chain.from_iterable(nested_list))
       
+      ## Rename columns specified by value in dictionary
       name_dict = dict(zip(col_list, new_names))
       df = df.rename(columns = name_dict)  
       concat_list.append(df)
@@ -120,66 +185,10 @@ def main():
                    df_name["wt_bs_dr"], df_name["wt_nbs_dr"]]
       
       sns.set_palette(palette = "plasma_r")
-      counter = 1
-      
-      try: 
-         for df in df_graphs:
-            if counter == 1:
-               col = "TotalCoverage"
 
-               ## Create histogram
-               hist_fig = plt.figure(figsize = (10, 6.5))
-               sns.displot(data = df, x = col, 
-                           kde = True, edgecolor = None, shrink = 0.90)
-               plt.title(f"Figure {counter}: Histogram of all {col}")
-               hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram", format = "png", dpi = 300)
-               plt.close()
+      ## Run graph_plots function
+      for df in df_graphs:
 
-               ## Create ECDF and plot median
-               ecdf_fig = plt.figure(figsize = (10, 6.5))
-               sns.ecdfplot(total_cov[col])
-               median = total_cov[col].median()
-               plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
-               plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
-               plt.text(median, 0.52, f"Median: {median:<6}", 
-                        horizontalalignment = "right", 
-                        verticalalignment = "bottom") 
-               counter += 1
-               plt.title(f"Figure {counter}: ECDF of all {col}")
-               ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF", format = "png", dpi = 300)
-               plt.close()
-            else:
-               col = "DeletionRate"
-               key = str(next(key for key, val in df_name.items() if val.equals(df)))
-               sample_group = "-".join(key.split("_")[0:2]).upper()
-
-               hist_fig = plt.figure(figsize = (10, 6.5))
-               sns.displot(data = df, x = col, 
-                           kde = True, edgecolor = None, shrink = 0.90)
-               counter += 1
-               plt.title(f"Figure {counter}: Histogram of all {col} in {sample_group}")
-               hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
-                              format = "png", dpi = 300)
-               plt.close()
-
-               ## Create ECDF and plot median
-               ecdf_fig = plt.figure(figsize = (10, 6.5))
-               sns.ecdfplot(df[col])
-               median = df[col].median()
-               plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
-               plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
-               plt.text(median, 0.52, f"Median: {median:<6}", 
-                        horizontalalignment = "right", 
-                        verticalalignment = "bottom") 
-               counter += 1
-               plt.title(f"Figure {counter}: ECDF of all {col} in {sample_group}")
-               ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
-                              format = "png", dpi = 300)
-               plt.close()
-      except Exception as e:
-         print(f"Failed to create distribution graphs: {e}")
-         traceback.print_exc()
-         raise
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
       traceback.print_exc()
