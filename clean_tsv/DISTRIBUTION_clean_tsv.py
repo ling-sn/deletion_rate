@@ -92,12 +92,12 @@ def concat_reps(suffix, tsv_list, subfolder, processed_folder):
       for pattern in pattern_list:
          ## New names: TotalCoverage, DeletionRate
          new_names.append(pattern.strip("_"))
-         match = [col for col in df.columns if re.search(pattern, col)]
 
-         ## Execute branch if match list is non-empty
+         ## Add columns that match pattern to nested_list
+         ## (only if match is non-empty)
+         match = [col for col in df.columns if re.search(pattern, col)]
          if match:
-               ## Add columns that match pattern to nested_list
-               nested_list.append(match)
+            nested_list.append(match)
 
       ## Flatten list of lists into single list
       col_list = list(chain.from_iterable(nested_list))
