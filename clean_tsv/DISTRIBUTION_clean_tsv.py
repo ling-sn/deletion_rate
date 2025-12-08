@@ -8,59 +8,58 @@ from itertools import chain
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-class FilterTSV:
-   def concat_reps(self, suffix, tsv_list, subfolder, processed_folder):
-      """
-      1. Search TSVs for matching suffix in filename
-      2. Put them in list
-      3. Read in as pandas dataframes
-      4. For each dataframe, rename dynamically renamed
-         "TotalCoverage" and "DeletionRate" columns to
-         generic name
-      5. Iteratively concatenate dfs w/ helper function
-      6. Drop excess rows
-      """
-      matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
-      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-      selected_cols = (df_list[0].columns.tolist())[0:17]
+def concat_reps(suffix, tsv_list, subfolder, processed_folder):
+   """
+   1. Search TSVs for matching suffix in filename
+   2. Put them in list
+   3. Read in as pandas dataframes
+   4. For each dataframe, rename dynamically renamed
+      "TotalCoverage" and "DeletionRate" columns to
+      generic name
+   5. Iteratively concatenate dfs w/ helper function
+   6. Drop excess rows
+   """
+   matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
+   df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
+   selected_cols = (df_list[0].columns.tolist())[0:17]
 
-      concat_list = []
-      nested_list = []
-      new_names = []
-      pattern_list = ["_TotalCoverage_", "_DeletionRate_"]
+   concat_list = []
+   nested_list = []
+   new_names = []
+   pattern_list = ["_TotalCoverage_", "_DeletionRate_"]
 
-      for df in df_list:
-         for pattern in pattern_list:
-            new_names.append(pattern.strip("_"))
-            match = [col for col in df.columns if re.search(pattern, col)]
-            if match:
-               nested_list.append(match)
+   for df in df_list:
+      for pattern in pattern_list:
+         new_names.append(pattern.strip("_"))
+         match = [col for col in df.columns if re.search(pattern, col)]
+         if match:
+            nested_list.append(match)
 
-         col_list = list(chain.from_iterable(nested_list))
-         
-         name_dict = dict(zip(col_list, new_names))
-         df = df.rename(columns = name_dict)  
-         concat_list.append(df)
+      col_list = list(chain.from_iterable(nested_list))
       
-      df_concat = pd.concat(concat_list, ignore_index = True)
-      
-      """
-      NOTES:
-      * Before each merge, drop all columns that are not:
-         1. selected_cols
-         2. TotalCoverage
-         3. DeletionRate
-      """
-      keep_list = list([col for col in df_concat.columns 
-                        if re.search("(TotalCoverage|DeletionRate)", col)]) + selected_cols
-      diff_cols = (df_concat.columns.difference(keep_list, sort = False))
-      df_final = df_concat.drop(columns = diff_cols)
+      name_dict = dict(zip(col_list, new_names))
+      df = df.rename(columns = name_dict)  
+      concat_list.append(df)
+   
+   df_concat = pd.concat(concat_list, ignore_index = True)
+   
+   """
+   NOTES:
+   * Before each merge, drop all columns that are not:
+      1. selected_cols
+      2. TotalCoverage
+      3. DeletionRate
+   """
+   keep_list = list([col for col in df_concat.columns 
+                     if re.search("(TotalCoverage|DeletionRate)", col)]) + selected_cols
+   diff_cols = (df_concat.columns.difference(keep_list, sort = False))
+   df_final = df_concat.drop(columns = diff_cols)
 
-      """
-      Save merged dataframe as TSV
-      """
-      merged_dir = processed_folder/f"{subfolder.name}{suffix}.tsv"
-      df_final.to_csv(merged_dir, sep = "\t", index = False)
+   """
+   Save merged dataframe as TSV
+   """
+   merged_dir = processed_folder/f"{subfolder.name}{suffix}.tsv"
+   df_final.to_csv(merged_dir, sep = "\t", index = False)
 
 def main():
    """
@@ -69,9 +68,6 @@ def main():
    """
    current_path = Path.cwd()
    input_dir = current_path/"calculations"
-
-   ## Initialize class
-   filtertsv = FilterTSV()
 
    try: 
       processed_folder = current_path/"merged"
@@ -89,7 +85,7 @@ def main():
 
             ## Merge replicates for each sample type
             for suffix in ["-BS", "-NBS"]:
-               filtertsv.concat_reps(suffix, tsv_list, subfolder, processed_folder)
+               concat_reps(suffix, tsv_list, subfolder, processed_folder)
 
       ## Collect all TSVs in processed_folder
       concat_reps_tsv = list(processed_folder.glob("*.tsv"))
