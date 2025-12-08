@@ -182,13 +182,15 @@ def main():
       """
       graph_folder = current_path/"distributions"
       graph_folder.mkdir(exist_ok = True, parents = True)
+
+      ## Dataframes that we want to make graphs for
       df_graphs = [total_cov, df_name["7ko_bs_dr"], 
                    df_name["wt_bs_dr"], df_name["wt_nbs_dr"]]
       
-      sns.set_palette(palette = "plasma_r")
-
       ## Run graph_plots function
+      sns.set_palette(palette = "plasma_r")
       for df in df_graphs:
+         # PLACEHOLDER
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
@@ -196,6 +198,6 @@ def main():
       raise
     
 if __name__ == "__main__":
-   print("Filtering .tsv files...")
+   print("Graphing distributions for .tsv files...")
    main()
    print("Process finished.")
