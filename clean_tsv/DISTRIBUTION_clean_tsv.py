@@ -9,12 +9,21 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 class FilterTSV:
-   def iter_concat(self, df_list):
+   def concat_reps(self, suffix, tsv_list, subfolder, processed_folder):
       """
-      * Rename all columns that match "_TotalCoverage_" or "_DeletionRate_"
-        to a generic name
-      * Concatenate dataframes
+      1. Search TSVs for matching suffix in filename
+      2. Put them in list
+      3. Read in as pandas dataframes
+      4. For each dataframe, rename dynamically renamed
+         "TotalCoverage" and "DeletionRate" columns to
+         generic name
+      5. Iteratively concatenate dfs w/ helper function
+      6. Drop excess rows
       """
+      matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
+      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
+      selected_cols = (df_list[0].columns.tolist())[0:17]
+
       concat_list = []
       nested_list = []
       new_names = []
@@ -34,10 +43,7 @@ class FilterTSV:
          concat_list.append(df)
       
       df_concat = pd.concat(concat_list, ignore_index = True)
-
-      return df_concat
-
-   def drop_cols(self, df, colnames, selected_cols):
+      
       """
       NOTES:
       * Before each merge, drop all columns that are not:
@@ -45,28 +51,10 @@ class FilterTSV:
          2. TotalCoverage
          3. DeletionRate
       """
-      keep_list = list([col for col in colnames 
+      keep_list = list([col for col in df_concat.columns 
                         if re.search("(TotalCoverage|DeletionRate)", col)]) + selected_cols
-      diff_cols = (df.columns.difference(keep_list, sort = False))
-      df = df.drop(columns = diff_cols)
-      return df
-
-   def concat_reps(self, suffix, tsv_list, subfolder, processed_folder):
-      """
-      1. Search TSVs for matching suffix in filename
-      2. Put them in list
-      3. Read in as pandas dataframes
-      4. For each dataframe, rename dynamically renamed
-         "TotalCoverage" and "DeletionRate" columns to
-         generic name
-      5. Iteratively concatenate w/ helper function
-      6. Drop excess rows
-      """
-      matches = [tsv for tsv in tsv_list if re.search(suffix, tsv.stem)]
-      df_list = [pd.read_csv(str(file), sep = "\t") for file in matches]
-      selected_cols = (df_list[0].columns.tolist())[0:17]
-      df_concat = self.iter_concat(df_list)
-      df_final = self.drop_cols(df_concat, df_concat.columns, selected_cols)
+      diff_cols = (df_concat.columns.difference(keep_list, sort = False))
+      df_final = df_concat.drop(columns = diff_cols)
 
       """
       Save merged dataframe as TSV
@@ -97,7 +85,7 @@ def main():
             tsv_list = sorted(
                tsv_folder.glob("*.tsv"),
                key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
-            ) 
+            )
 
             ## Merge replicates for each sample type
             for suffix in ["-BS", "-NBS"]:
@@ -110,7 +98,7 @@ def main():
       df_list = [pd.read_csv(str(file), sep = "\t") for file in concat_reps_tsv]
       total_cov = pd.concat(df_list, ignore_index = True)
 
-      ## Create 3 additonal concat dataframes based on pattern
+      ## Separately, create 3 additonal concat dataframes based on pattern
       df_name = {}
       file_pattern = ["7KO.*BS", "WT.*BS", "WT.*NBS"]
       var_names = ["7ko_bs_dr", "wt_bs_dr", "wt_nbs_dr"] 
