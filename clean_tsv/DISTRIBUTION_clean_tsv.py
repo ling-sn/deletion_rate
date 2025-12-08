@@ -162,7 +162,7 @@ def main():
 
       ## Separately, create 3 additonal concat dataframes based on pattern
       df_name = {}
-      file_pattern = ["7KO.*BS", "WT.*BS", "WT.*NBS"]
+      file_pattern = ["7KO.*-BS", "WT.*-BS", "WT.*-NBS"]
       var_names = ["7ko_bs_dr", "wt_bs_dr", "wt_nbs_dr"] 
 
       for pattern, name in zip(file_pattern, var_names):
