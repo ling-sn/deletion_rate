@@ -90,6 +90,7 @@ def concat_reps(suffix, tsv_list, subfolder, processed_folder):
       new_names = []
       
       for pattern in pattern_list:
+         ## New names: TotalCoverage, DeletionRate
          new_names.append(pattern.strip("_"))
          match = [col for col in df.columns if re.search(pattern, col)]
 
