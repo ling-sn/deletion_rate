@@ -9,7 +9,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 class GraphPlots:
-   def del_rate(self, df, graph_folder, df_name):
+   def del_rate(self, df, graph_folder, df_name, counter):
       col = "DeletionRate"
 
       ## Prepare unique part of filename
@@ -28,7 +28,7 @@ class GraphPlots:
       counter += 1
       plt.title(f"Figure {counter}: Histogram of all non-zero {col} in {sample_group}")
       hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
-                     format = "png", dpi = 300)
+                       format = "png", dpi = 300)
       plt.close()
 
       ## Create ECDF and plot median
@@ -48,12 +48,12 @@ class GraphPlots:
       counter += 1
       plt.title(f"Figure {counter}: ECDF of all non-zero {col} in {sample_group}")
       ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
-                     format = "png", dpi = 300)
+                       format = "png", dpi = 300)
       plt.close()
 
       return counter
 
-   def total_cov(self, df, graph_folder):
+   def total_cov(self, df, graph_folder, counter):
       col = "TotalCoverage"
       
       ## Create histogram
@@ -62,7 +62,7 @@ class GraphPlots:
                   kde = True, edgecolor = "white")
       plt.title(f"Figure {counter}: Histogram of all {col}")
       plt.ylim(0, 125000)
-      plt.xlim(0, 200)
+      plt.xlim(0, 500) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 500
       hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram", format = "png", dpi = 300)
       plt.close()
 
@@ -82,7 +82,7 @@ class GraphPlots:
                })
       counter += 1
       plt.title(f"Figure {counter}: ECDF of all {col}")
-      plt.xlim(0, 500)
+      plt.xlim(0, 500) ## Same arbitrary limit as before
       ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF", format = "png", dpi = 300)
       plt.close()
 
@@ -91,12 +91,12 @@ class GraphPlots:
    def graph_all(self, counter, df, graph_folder, df_name):
       try: 
          if counter == 1:
-            ## Graph distributions for TotalCoverage
-            counter = self.total_cov(df, graph_folder)
+            ## Graph distributions for TotalCoverage & update count
+            counter = self.total_cov(df, graph_folder, counter)
 
          else:
-            ## Graph distribution for DeletionRate
-            counter = self.del_rate(df, graph_folder, df_name)
+            ## Graph distributions for DeletionRate & update count
+            counter = self.del_rate(df, graph_folder, df_name, counter)
             
          return counter
       except Exception as e:
@@ -229,11 +229,10 @@ def main():
       ## Run graph_plots function
       sns.set_palette(palette = "plasma_r")
       plt.rcParams["font.family"] = "Cambria"
+      counter = 1
 
       for df in df_graphs:
-         # PLACEHOLDER
-         print(df)
-         # use graphs class member
+         counter = graph.graph_all(counter, df, graph_folder, df_name)
 
    except Exception as e:
       print(f"Failed to create merged .tsv files: {e}")
