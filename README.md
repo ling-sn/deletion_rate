@@ -1,3 +1,5 @@
+NOTE: This script is a WIP
+
 ## <ins>**PART I: Calculating deletion rates at each UNUAR site after realignment**</ins>
 ### Necessary files
 <img src="https://github.com/user-attachments/assets/904e3efb-90a5-485f-a084-577b9c461370" width="400"/>
