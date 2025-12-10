@@ -1,4 +1,4 @@
-NOTE: This script is a WIP
+NOTE: This script is a WIP, and many things have changed since the text below was written
 
 ## <ins>**PART I: Calculating deletion rates at each UNUAR site after realignment**</ins>
 ### Necessary files
