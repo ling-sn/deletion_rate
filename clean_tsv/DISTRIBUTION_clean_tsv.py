@@ -27,7 +27,7 @@ class GraphPlots:
                   height = 6.5, aspect = 10/6.5)
       counter += 1
       plt.title(f"Figure {counter}: Histogram of all non-zero {col} in {sample_group}")
-      hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
+      hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram.png", 
                        format = "png", dpi = 300)
       plt.close()
 
@@ -61,8 +61,7 @@ class GraphPlots:
                              kde = True, edgecolor = "white", 
                              height = 6.5, aspect = 10/6.5)
       plt.title(f"Figure {counter}: Histogram of all {col}")
-      plt.ylim(0, 125000)
-      plt.xlim(0, 500) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 500
+      plt.xlim(0, 200) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 200
       hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram.png", format = "png", dpi = 300)
       plt.close()
 
@@ -82,7 +81,7 @@ class GraphPlots:
                })
       counter += 1
       plt.title(f"Figure {counter}: ECDF of all {col}")
-      plt.xlim(0, 500) ## Same arbitrary limit as before
+      plt.xlim(0, 200) ## Same arbitrary limit as before
       ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF.png", format = "png", dpi = 300)
       plt.close()
 
