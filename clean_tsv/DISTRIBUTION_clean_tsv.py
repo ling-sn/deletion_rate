@@ -22,9 +22,9 @@ class GraphPlots:
       df_drop = df[df[col] != 0].copy()
 
       ## Create histogram of non-zero DeletionRate
-      hist_fig = plt.figure(figsize = (10, 6.5))
-      sns.displot(data = df_drop, x = col,
-                  kde = True, edgecolor = "white")
+      hist_fig = sns.displot(data = df_drop, x = col,
+                  kde = True, edgecolor = "white",
+                  height = 6.5, aspect = 10/6.5)
       counter += 1
       plt.title(f"Figure {counter}: Histogram of all non-zero {col} in {sample_group}")
       hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
@@ -47,7 +47,7 @@ class GraphPlots:
                })
       counter += 1
       plt.title(f"Figure {counter}: ECDF of all non-zero {col} in {sample_group}")
-      ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
+      ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF.png", 
                        format = "png", dpi = 300)
       plt.close()
 
@@ -57,13 +57,13 @@ class GraphPlots:
       col = "TotalCoverage"
       
       ## Create histogram
-      hist_fig = plt.figure(figsize = (10, 6.5))
-      sns.displot(data = df, x = col, 
-                  kde = True, edgecolor = "white")
+      hist_fig = sns.displot(data = df, x = col, 
+                             kde = True, edgecolor = "white", 
+                             height = 6.5, aspect = 10/6.5)
       plt.title(f"Figure {counter}: Histogram of all {col}")
       plt.ylim(0, 125000)
       plt.xlim(0, 500) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 500
-      hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram", format = "png", dpi = 300)
+      hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram.png", format = "png", dpi = 300)
       plt.close()
 
       ## Create ECDF and plot median
@@ -83,7 +83,7 @@ class GraphPlots:
       counter += 1
       plt.title(f"Figure {counter}: ECDF of all {col}")
       plt.xlim(0, 500) ## Same arbitrary limit as before
-      ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF", format = "png", dpi = 300)
+      ecdf_fig.savefig(graph_folder/f"Fig{counter}_{col}_ECDF.png", format = "png", dpi = 300)
       plt.close()
 
       return counter
