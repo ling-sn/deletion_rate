@@ -19,31 +19,37 @@ class GraphPlots:
       """
       key = str(next(key for key, val in df_name.items() if val.equals(df)))
       sample_group = "-".join(key.split("_")[0:2]).upper()
+      df_drop = df[df[col] != 0].copy()
 
-      # ## Create histogram
-      # hist_fig = plt.figure(figsize = (10, 6.5))
-      # sns.displot(data = df, x = col,
-      #             kde = True, edgecolor = None)
-      # counter += 1
-      # plt.title(f"Figure {counter}: Histogram of all {col} in {sample_group}")
-      # hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
-      #                format = "png", dpi = 300)
-      # plt.close()
+      ## Create histogram of non-zero DeletionRate
+      hist_fig = plt.figure(figsize = (10, 6.5))
+      sns.displot(data = df_drop, x = col,
+                  kde = True, edgecolor = "white")
+      counter += 1
+      plt.title(f"Figure {counter}: Histogram of all non-zero {col} in {sample_group}")
+      hist_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_Histogram", 
+                     format = "png", dpi = 300)
+      plt.close()
 
-      # ## Create ECDF and plot median
-      # ecdf_fig = plt.figure(figsize = (10, 6.5))
-      # sns.ecdfplot(df[col])
-      # median = df[col].median()
-      # plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
-      # plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
-      # plt.text(median, 0.52, f"Median: {median:<6}", 
-      #          horizontalalignment = "right", 
-      #          verticalalignment = "bottom") 
-      # counter += 1
-      # plt.title(f"Figure {counter}: ECDF of all {col} in {sample_group}")
-      # ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
-      #                format = "png", dpi = 300)
-      # plt.close()
+      ## Create ECDF and plot median
+      ecdf_fig = plt.figure(figsize = (10, 6.5))
+      sns.ecdfplot(df_drop[col])
+      median = df_drop[col].median()
+      plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+      plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
+      plt.text(median, 0.5, f"Median: {round(median, 4)}", 
+               horizontalalignment = "right",
+               verticalalignment = "bottom",
+               bbox = {
+                  "facecolor": "white",
+                  "edgecolor": "black",
+                  "boxstyle": "square, pad = 0.5"
+               })
+      counter += 1
+      plt.title(f"Figure {counter}: ECDF of all non-zero {col} in {sample_group}")
+      ecdf_fig.savefig(graph_folder/f"Fig{counter}_{sample_group}_{col}_ECDF", 
+                     format = "png", dpi = 300)
+      plt.close()
 
       return counter
 
@@ -53,7 +59,7 @@ class GraphPlots:
       ## Create histogram
       hist_fig = plt.figure(figsize = (10, 6.5))
       sns.displot(data = df, x = col, 
-                  kde = True, edgecolor = None)
+                  kde = True, edgecolor = "white")
       plt.title(f"Figure {counter}: Histogram of all {col}")
       plt.ylim(0, 125000)
       plt.xlim(0, 200)
@@ -66,9 +72,14 @@ class GraphPlots:
       median = df[col].median()
       plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
       plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
-      plt.text(500, 0.01, s = f"Median: {median:<6}",
-               horizontalalignment = "right", 
-               verticalalignment = "bottom") 
+      plt.text(median, 0.5, s = f"Median: {median}",
+               horizontalalignment = "right",
+               verticalalignment = "bottom",
+               bbox = {
+                  "facecolor": "white",
+                  "edgecolor": "black",
+                  "boxstyle": "square, pad = 0.5"
+               })
       counter += 1
       plt.title(f"Figure {counter}: ECDF of all {col}")
       plt.xlim(0, 500)
