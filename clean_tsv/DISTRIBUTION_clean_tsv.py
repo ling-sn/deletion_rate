@@ -188,9 +188,11 @@ def main():
                key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
             )
 
+            ## Run code only if 'merged' folder empty
             ## Merge replicates for each sample type
-            for suffix in ["-BS", "-NBS"]:
-               concat_reps(suffix, tsv_list, subfolder, processed_folder)
+            if not any(Path(processed_folder).iterdir()):
+               for suffix in ["-BS", "-NBS"]:
+                  concat_reps(suffix, tsv_list, subfolder, processed_folder)
 
       ## Collect all TSVs in processed_folder
       concat_reps_tsv = list(processed_folder.glob("*.tsv"))
