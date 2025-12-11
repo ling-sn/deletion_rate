@@ -38,7 +38,7 @@ class GraphPlots:
       plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
       plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
       plt.text(median, 0.5, f"Median: {round(median, 4)}", 
-               horizontalalignment = "right",
+               horizontalalignment = "left",
                verticalalignment = "bottom",
                bbox = {
                   "facecolor": "white",
@@ -62,6 +62,7 @@ class GraphPlots:
                              height = 6.5, aspect = 10/6.5)
       plt.title(f"Figure {counter}: Histogram of all {col}")
       plt.xlim(0, 125) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 200
+      plt.ticklabel_format(axis = "y", style = "plain")
       hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram.png", format = "png", dpi = 300)
       plt.close()
 
@@ -72,7 +73,7 @@ class GraphPlots:
       plt.axvline(x = median, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
       plt.axhline(y = 0.5, color = "red", ls = ":", lw = 1.5, alpha = 0.3)
       plt.text(median, 0.5, s = f"Median: {median}",
-               horizontalalignment = "right",
+               horizontalalignment = "left",
                verticalalignment = "bottom",
                bbox = {
                   "facecolor": "white",
