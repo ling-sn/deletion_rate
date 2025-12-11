@@ -178,19 +178,19 @@ def main():
       processed_folder = current_path/"merged"
       processed_folder.mkdir(exist_ok = True, parents = True)
 
-      for subfolder in input_dir.iterdir():
-         tsv_folder = input_dir/subfolder/"individual_tsv"
+      ## Concatenate calculation files only if 'merged' folder empty
+      if not any(Path(processed_folder).iterdir()):
+         for subfolder in input_dir.iterdir():
+            tsv_folder = input_dir/subfolder/"individual_tsv"
 
-         if subfolder.is_dir():
-            ## Collect paths of .tsv files and put in list
-            tsv_list = sorted(
-               tsv_folder.glob("*.tsv"),
-               key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
-            )
+            if subfolder.is_dir():
+               ## Collect paths of .tsv files and put in list
+               tsv_list = sorted(
+                  tsv_folder.glob("*.tsv"),
+                  key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
+               )
 
-            ## Run code only if 'merged' folder empty
-            ## Merge replicates for each sample type
-            if not any(Path(processed_folder).iterdir()):
+               ## Merge replicates for each sample type
                for suffix in ["-BS", "-NBS"]:
                   concat_reps(suffix, tsv_list, subfolder, processed_folder)
 
