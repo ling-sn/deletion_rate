@@ -61,7 +61,7 @@ class GraphPlots:
                              kde = True, edgecolor = "white", 
                              height = 6.5, aspect = 10/6.5)
       plt.title(f"Figure {counter}: Histogram of all {col}")
-      plt.xlim(0, 125) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 200
+      plt.xlim(0, 100) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 200
       plt.ticklabel_format(axis = "y", style = "plain")
       hist_fig.savefig(graph_folder/f"Fig{counter}_{col}_Histogram.png", format = "png", dpi = 300)
       plt.close()
