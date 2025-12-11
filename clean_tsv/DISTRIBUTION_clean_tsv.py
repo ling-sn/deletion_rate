@@ -59,7 +59,8 @@ class GraphPlots:
       ## Create histogram
       hist_fig = sns.displot(data = df, x = col, 
                              kde = True, edgecolor = "white", 
-                             height = 6.5, aspect = 10/6.5)
+                             height = 6.5, aspect = 10/6.5,
+                             bins = 100)
       plt.title(f"Figure {counter}: Histogram of all {col}")
       plt.xlim(0, 100) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 200
       plt.ticklabel_format(axis = "y", style = "plain")
