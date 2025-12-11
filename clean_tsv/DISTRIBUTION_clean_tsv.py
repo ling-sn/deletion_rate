@@ -178,7 +178,7 @@ def main():
       processed_folder = current_path/"merged"
       processed_folder.mkdir(exist_ok = True, parents = True)
 
-      ## Concatenate calculation files only if 'merged' folder empty
+      ## Execute only if 'merged' folder empty
       if not any(Path(processed_folder).iterdir()):
          for subfolder in input_dir.iterdir():
             tsv_folder = input_dir/subfolder/"individual_tsv"
