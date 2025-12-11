@@ -60,7 +60,7 @@ class GraphPlots:
       hist_fig = sns.displot(data = df, x = col, 
                              kde = True, edgecolor = "white", 
                              height = 6.5, aspect = 10/6.5,
-                             bins = 100)
+                             binwidth = 2, linewidth = 2)
       plt.title(f"Figure {counter}: Histogram of all {col}")
       plt.xlim(0, 100) ## I've set an arbitrary limit here, since we don't expect a lot of TotalCov > 200
       plt.ticklabel_format(axis = "y", style = "plain")
@@ -179,21 +179,19 @@ def main():
       processed_folder = current_path/"merged"
       processed_folder.mkdir(exist_ok = True, parents = True)
 
-      ## Execute only if 'merged' folder empty
-      if not any(Path(processed_folder).iterdir()):
-         for subfolder in input_dir.iterdir():
-            tsv_folder = input_dir/subfolder/"individual_tsv"
+      for subfolder in input_dir.iterdir():
+         tsv_folder = input_dir/subfolder/"individual_tsv"
 
-            if subfolder.is_dir():
-               ## Collect paths of .tsv files and put in list
-               tsv_list = sorted(
-                  tsv_folder.glob("*.tsv"),
-                  key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
-               )
+         if subfolder.is_dir():
+            ## Collect paths of .tsv files and put in list
+            tsv_list = sorted(
+               tsv_folder.glob("*.tsv"),
+               key = lambda x: int(re.search(r"Rep(\d+)", x.name).group(1)) ## order by rep integer
+            )
 
-               ## Merge replicates for each sample type
-               for suffix in ["-BS", "-NBS"]:
-                  concat_reps(suffix, tsv_list, subfolder, processed_folder)
+            ## Merge replicates for each sample type
+            for suffix in ["-BS", "-NBS"]:
+               concat_reps(suffix, tsv_list, subfolder, processed_folder)
 
       ## Collect all TSVs in processed_folder
       concat_reps_tsv = list(processed_folder.glob("*.tsv"))
@@ -231,7 +229,6 @@ def main():
       
       ## Run graph_plots function
       sns.set_palette(palette = "plasma_r")
-      plt.rcParams["font.family"] = "Cambria"
       counter = 1
 
       for df in df_graphs:
